@@ -1,0 +1,308 @@
+import { ApiResponse } from '@/types';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+
+class ApiClient {
+  private baseUrl: string;
+  private sessionId: string | null;
+
+  constructor(baseUrl: string = API_BASE_URL) {
+    this.baseUrl = baseUrl;
+    this.sessionId = null;
+  }
+
+  private getSessionId(): string {
+    const storageKey = 'pi_session_id';
+
+    if (typeof window === 'undefined') {
+      if (!this.sessionId) {
+        this.sessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+      }
+      return this.sessionId;
+    }
+
+    const storedSessionId = localStorage.getItem(storageKey);
+    if (storedSessionId) {
+      this.sessionId = storedSessionId;
+      return storedSessionId;
+    }
+
+    const newSessionId = `session_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+    try {
+      localStorage.setItem(storageKey, newSessionId);
+    } catch (error) {
+      console.warn('Unable to persist session identifier to localStorage', error);
+    }
+    this.sessionId = newSessionId;
+    return newSessionId;
+  }
+
+  private async request(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse> {
+    const url = `${this.baseUrl}${endpoint}`;
+    
+    const defaultHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-session-id': this.getSessionId(),
+    };
+     
+    if (typeof window !== 'undefined') {
+      defaultHeaders['Origin'] = window.location.origin;
+      
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        defaultHeaders['Authorization'] = `Bearer ${token}`;
+      }
+    }
+
+    const config: RequestInit = {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+      },
+    };
+
+    try {
+      const response = await fetch(url, config);
+      const data = await response.json();
+
+      if (!response.ok) {
+        // For 404 errors, include the status code in the error message for easier detection
+        const errorMessage = data.error || `HTTP ${response.status}`;
+        const error = new Error(errorMessage) as Error & { status?: number };
+        // Add status code to error for easier checking
+        error.status = response.status;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      // Only log non-404 errors to avoid cluttering console
+      const errorWithStatus = error as Error & { status?: number };
+      if (!(error instanceof Error && errorWithStatus.status === 404)) {
+        console.error(`API request failed: ${endpoint}`, error);
+      }
+      throw error;
+    }
+  }
+
+  // Authentication methods
+  async initPiAuth(piAuthData: {
+    piAccessToken: string;
+    piUid: string;
+    piUsername: string;
+  }) {
+    return this.request('/auth/pi-init', {
+      method: 'POST',
+      body: JSON.stringify(piAuthData),
+    });
+  }
+
+  async findUserByWallet(walletAddress: string) {
+    return this.request('/auth/find-user-by-wallet', {
+      method: 'POST',
+      body: JSON.stringify({ walletAddress }),
+    });
+  }
+
+  async findUserByUsername(username: string) {
+    return this.request('/auth/find-user', {
+      method: 'POST',
+      body: JSON.stringify({ piUsername: username }),
+    });
+  }
+
+  // Pi Authentication
+  async signIn(authResult: {
+    accessToken: string;
+    user: { uid: string; username: string };
+  }) {
+    return this.request('/auth/signin', {
+      method: 'POST',
+      body: JSON.stringify(authResult),
+    });
+  }
+
+  // Wallet Import
+  async importWallet(userId: string, mnemonic: string) {
+    return this.request('/auth/import-wallet', {
+      method: 'POST',
+      body: JSON.stringify({ userId, mnemonic }),
+    });
+  }
+
+  // Encrypted Secret Management
+  async storeSecret(data: {
+    userId: string;
+    publicKey: string;
+    encryptedSecret: string;
+    iv: string;
+    salt: string;
+  }) {
+    return this.request('/auth/store-secret', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getSecret(userId: string, publicKey: string) {
+    return this.request('/auth/get-secret', {
+      method: 'POST',
+      body: JSON.stringify({ userId, publicKey }),
+    });
+  }
+
+  async removeSecret(userId: string, publicKey: string) {
+    return this.request('/auth/remove-secret', {
+      method: 'DELETE',
+      body: JSON.stringify({ userId, publicKey }),
+    });
+  }
+
+  async verifyPassphrase(username: string, passphrase: string) {
+    return this.request('/auth/verify-passphrase', {
+      method: 'POST',
+      body: JSON.stringify({ username, passphrase }),
+    });
+  }
+
+
+  // Balance Check Methods 
+  async checkBalance(address: string) {
+    return this.request(`/balance/check/${address}`);
+  }
+
+  async bulkCheckBalance(addresses: string[]) {
+    return this.request('/balance/bulk-check', {
+      method: 'POST',
+      body: JSON.stringify({ addresses }),
+    });
+  }
+
+  async enhancedBalanceCheck(address: string) {
+    return this.request(`/balance/enhanced/${address}`);
+  }
+
+  // Health & Monitoring Methods  
+  async healthCheck() {
+    return this.request('/health');
+  }
+
+  async detailedHealthCheck() {
+    return this.request('/health/detailed');
+  }
+
+  async getStats() {
+    return this.request('/health/stats');
+  }
+
+  async getPiPrice() {
+    return this.request('/health/price');
+  }
+
+  async getReserveStatus() {
+    return this.request('/health/reserve');
+  }
+  async getStatsLegacy(type: 'dynamic' | 'fixed' = 'dynamic') {
+    return this.request(`/stablecoin/stats?type=${type}`);
+  }
+
+  async mint(data: {
+    amount: number;
+    walletAddress: string;
+    secretSeed: string;
+  }) {
+    return this.request('/stablecoin/mint', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async redeem(data: {
+    amount: number;
+    walletAddress: string;
+    secretSeed: string;
+  }) {
+    return this.request('/stablecoin/redeem', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getBalanceLegacy() {
+    return this.request('/stablecoin/balance');
+  }
+
+  // Wallet methods
+  async getWalletInfo() {
+    return this.request('/wallet/info');
+  }
+
+  async getTransactionHistory(limit?: number) {
+    const params = limit ? `?limit=${limit}` : '';
+    return this.request(`/stablecoin/history${params}`);
+  }
+
+  // Volatility & Position Health Methods
+  async getCurrentVolatility() {
+    return this.request('/stablecoin/volatility/current');
+  }
+
+  async getVolatilityHistory(hours?: number) {
+    const params = hours ? `?hours=${hours}` : '';
+    return this.request(`/stablecoin/volatility/history${params}`);
+  }
+
+  async getPositionHealth(address: string) {
+    return this.request(`/stablecoin/positions/${address}`);
+  }
+
+  async getPositionHealthDetailed(address: string) {
+    return this.request(`/stablecoin/positions/${address}/health`);
+  }
+
+  async getNotifications(limit?: number) {
+    const params = limit ? `?limit=${limit}` : '';
+    return this.request(`/stablecoin/notifications${params}`);
+  }
+
+  async markNotificationAsRead(notificationId: string) {
+    return this.request(`/stablecoin/notifications/${notificationId}/read`, {
+      method: 'POST',
+    });
+  }
+
+  // Rewards & Incentives Methods
+  async getRewardStatus() {
+    return this.request('/stablecoin/rewards/status');
+  }
+
+  // Soft Liquidation Methods
+  async getSoftLiquidationOffers(address: string) {
+    return this.request(`/stablecoin/positions/${address}/soft-liquidation`);
+  }
+
+  async offerSoftLiquidation(address: string) {
+    return this.request(`/stablecoin/positions/${address}/soft-liquidation/offer`, {
+      method: 'POST',
+    });
+  }
+
+  async acceptSoftLiquidation(address: string, offerId: string) {
+    return this.request(`/stablecoin/positions/${address}/soft-liquidation/accept`, {
+      method: 'POST',
+      body: JSON.stringify({ offerId }),
+    });
+  }
+
+  // Risk Signals (admin/internal)
+  async getRiskSignals() {
+    return this.request('/stablecoin/risk-signals');
+  }
+}
+
+export const apiClient = new ApiClient();
+export { ApiClient };

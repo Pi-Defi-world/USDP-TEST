@@ -1,0 +1,73 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/lib/store/authStore';
+import { Home, Settings, LogOut, Wallet, TrendingUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+export function DashboardNavbar() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const { logout, isAuthenticated } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  const navItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: Home },
+    { href: '/settings', label: 'Settings', icon: Settings },
+    { href: '/stats', label: 'Stats', icon: TrendingUp },
+  ];
+
+  return (
+    <nav className="border-b bg-white/80 backdrop-blur-sm dark:bg-slate-800/80 sticky top-0 z-50">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center space-x-8">
+            <Link href="/dashboard" className="flex items-center space-x-2">
+              <Wallet className="h-6 w-6 text-blue-600" />
+              <span className="font-bold text-xl">USDP</span>
+            </Link>
+            <div className="flex items-center space-x-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <Button
+                      variant={isActive ? 'secondary' : 'ghost'}
+                      className={cn(
+                        'flex items-center space-x-2',
+                        isActive && 'bg-accent'
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Button>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            onClick={handleLogout}
+            className="flex items-center space-x-2"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Logout</span>
+          </Button>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
