@@ -3,23 +3,19 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/lib/store/authStore';
+import { usePi } from '@/components/providers/pi-provider';
 import { Home, Settings, LogOut, Wallet, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function DashboardNavbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout, isAuthenticated } = useAuthStore();
+  const { signOut, isAuthenticated } = usePi();
 
   const handleLogout = () => {
-    logout();
+    signOut();
     router.push('/');
   };
-
-  if (!isAuthenticated) {
-    return null;
-  }
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },

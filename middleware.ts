@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Public routes that don't require authentication
-const publicRoutes = ['/', '/login', '/register'];
+const publicRoutes = ['/'];
 
 // Stats page (if it exists) - also public
 const statsRoutes = ['/stats'];
@@ -17,9 +17,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   
-  // For dashboard routes, let client-side handle authentication
-  // (since we use localStorage for tokens, not cookies)
-  // The dashboard layout and pages will check authentication client-side
   if (pathname.startsWith('/dashboard')) {
     return NextResponse.next();
   }

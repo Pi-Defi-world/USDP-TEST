@@ -51,7 +51,15 @@ class ApiClient {
     if (typeof window !== 'undefined') {
       defaultHeaders['Origin'] = window.location.origin;
       
-      const token = localStorage.getItem('auth_token');
+      // Try JWT token first (from backend signin)
+      let token = localStorage.getItem('auth_token');
+      
+      // Fallback to Pi access token if JWT not available
+      // This allows API calls to work even if backend signin hasn't completed yet
+      if (!token) {
+        token = localStorage.getItem('pi_access_token');
+      }
+      
       if (token) {
         defaultHeaders['Authorization'] = `Bearer ${token}`;
       }

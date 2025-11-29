@@ -10,31 +10,6 @@ import { Wallet, Shield, TrendingUp, Zap } from 'lucide-react';
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      <header className="border-b bg-white/80 backdrop-blur-sm dark:bg-slate-900/80">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600" />
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                USDP
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                Pi Testnet
-              </Badge>
-              <div className="flex space-x-2">
-                <Button variant="ghost" asChild>
-                  <Link href="/login">Login</Link>
-                </Button>
-                <Button asChild>
-                  <Link href="/register">Get Started</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
 
       <main className="container mx-auto px-4 py-16">
         <div className="text-center space-y-8">
@@ -50,7 +25,7 @@ export default function HomePage() {
 
           <div className="flex justify-center space-x-4">
             <Button size="lg" asChild>
-              <Link href="/register">Start Trading</Link>
+              <Link href="/dashboard">Go to Dashboard</Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
               <Link href="/stats">View Stats</Link>
@@ -64,9 +39,9 @@ export default function HomePage() {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
                 <Wallet className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <CardTitle className="text-lg">Passkey Security</CardTitle>
+              <CardTitle className="text-lg">Pi Authentication</CardTitle>
               <CardDescription>
-                Secure authentication with biometric passkeys. Your passphrase never leaves your device.
+                Secure authentication with Pi Network SDK. Connect your wallet to get started.
               </CardDescription>
             </CardHeader>
           </Card>

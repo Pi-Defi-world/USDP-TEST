@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { useAuthStore } from '@/lib/store/authStore';
+import { usePi } from '@/components/providers/pi-provider';
 import { useWalletStore } from '@/lib/store/walletStore';
 import { usePriceStore } from '@/lib/store/priceStore';
 import { MintForm } from '@/components/MintForm';
@@ -17,16 +17,16 @@ import { Wallet, TrendingUp, DollarSign, Shield, LogOut, RefreshCw } from 'lucid
 import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = usePi();
   const { walletAddress, balance, fetchBalance, isLoading: walletLoading } = useWalletStore();
   const { piPrice, fetchPiPrice, isLoading: priceLoading } = usePriceStore();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Redirect if not authenticated
+    // If not authenticated with Pi, show message but don't redirect (let user connect wallet)
     if (!isAuthenticated) {
-      router.push('/login');
+      setIsLoading(false);
       return;
     }
 
@@ -49,8 +49,10 @@ export default function DashboardPage() {
       }
     };
 
-    loadData();
-  }, [isAuthenticated, walletAddress, router, fetchPiPrice, fetchBalance]);
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [isAuthenticated, walletAddress, fetchPiPrice, fetchBalance]);
 
   const handleRefresh = async () => {
     try {
@@ -69,6 +71,26 @@ export default function DashboardPage() {
       setIsLoading(false);
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80 max-w-md">
+          <CardHeader>
+            <CardTitle>Connect Your Wallet</CardTitle>
+            <CardDescription>
+              Please connect your Pi Network wallet to access the dashboard
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground text-center">
+              Use the "Connect Wallet" button in the navigation bar to get started.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
