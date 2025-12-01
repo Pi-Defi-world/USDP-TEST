@@ -15,7 +15,6 @@ import {
   Loader2,
   RefreshCw
 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 interface RewardsStatusProps {
   walletAddress: string;
@@ -25,7 +24,6 @@ export function RewardsStatus({ walletAddress }: RewardsStatusProps) {
   const [rewardStatus, setRewardStatus] = useState<RewardStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const fetchRewards = async () => {
     try {

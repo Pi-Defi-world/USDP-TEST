@@ -162,10 +162,10 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
                     <div className="space-y-1">
                       {tx.type === 'mint' && (
                         <>
-                          {(tx.usdpAmount || (tx as any).zyraAmount) && (
+                          {(tx.usdpAmount || tx.zyraAmount) && (
                             <div className="flex items-center space-x-2">
                               <span className="text-sm font-medium text-green-600">
-                                +{tx.usdpAmount || (tx as any).zyraAmount} USDP
+                                +{tx.usdpAmount || tx.zyraAmount} USDP
                               </span>
                             </div>
                           )}
@@ -180,10 +180,10 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
                       )}
                       {tx.type === 'redeem' && (
                         <>
-                          {(tx.usdpAmount || (tx as any).zyraAmount) && (
+                          {(tx.usdpAmount || tx.zyraAmount) && (
                             <div className="flex items-center space-x-2">
                               <span className="text-sm font-medium text-red-600">
-                                -{tx.usdpAmount || (tx as any).zyraAmount} USDP
+                                -{tx.usdpAmount || tx.zyraAmount} USDP
                               </span>
                             </div>
                           )}
@@ -198,11 +198,11 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
                       )}
                       {tx.type !== 'mint' && tx.type !== 'redeem' && (
                         <>
-                          {(tx.usdpAmount || (tx as any).zyraAmount) && (
+                          {(tx.usdpAmount || tx.zyraAmount) && (
                             <div className="flex items-center space-x-2">
                               <span className="text-sm font-medium">
                                 {tx.direction === 'in' ? '+' : '-'}
-                                {tx.usdpAmount || (tx as any).zyraAmount} USDP
+                                {tx.usdpAmount || tx.zyraAmount} USDP
                               </span>
                             </div>
                           )}
@@ -238,9 +238,9 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
                     <span>View</span>
                   </a>
                   <div className="text-xs text-muted-foreground space-y-1">
-                    {(tx.usdpFee || (tx as any).zyraFee) && (
+                    {(tx.usdpFee || tx.zyraFee) && (
                       <div>
-                        USDP Fee: {tx.usdpFee || (tx as any).zyraFee} USDP
+                        USDP Fee: {tx.usdpFee || tx.zyraFee} USDP
                       </div>
                     )}
                     <div>

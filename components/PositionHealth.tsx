@@ -76,6 +76,7 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
       const interval = setInterval(fetchData, 30000);
       return () => clearInterval(interval);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [walletAddress]);
 
   if (isLoading) {
@@ -133,7 +134,7 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              You don't have an active collateral position. Mint USDP tokens to create a position.
+              You don&apos;t have an active collateral position. Mint USDP tokens to create a position.
             </AlertDescription>
           </Alert>
         </CardContent>
