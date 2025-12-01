@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthStore } from '@/lib/store/authStore';
 import { apiClient } from '@/lib/api/client';
 import { TestnetBadge } from '@/components/TestnetBadge';
 import { Label } from '@/components/ui/label';
@@ -36,20 +35,40 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const { getPasskeys, deletePasskey } = useAuthStore();
   const { toast } = useToast();
   const isTestnet = apiClient.isTestnetMode();
   const usdTestAssetCode = process.env.NEXT_PUBLIC_USD_TEST_ASSET_CODE || 'USDTEST';
+
+  const getAuthToken = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('auth_token') || localStorage.getItem('pi_access_token');
+  };
 
   const loadPasskeys = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await getPasskeys();
-      if (response.success && response.data) {
-        setPasskeys(response.data.passkeys);
+      const token = getAuthToken();
+      if (!token) {
+        setError('Not authenticated');
+        setIsLoading(false);
+        return;
+      }
+
+      const response = await fetch('/api/auth/passkeys', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.data) {
+        setPasskeys(data.data.passkeys || []);
       } else {
-        setError(response.error || 'Failed to load passkeys');
+        setError(data.error || 'Failed to load passkeys');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load passkeys');
@@ -74,8 +93,27 @@ export default function SettingsPage() {
 
     setDeletingId(credentialId);
     try {
-      const response = await deletePasskey(credentialId);
-      if (response.success) {
+      const token = getAuthToken();
+      if (!token) {
+        toast({
+          title: 'Delete Failed',
+          description: 'Not authenticated',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const response = await fetch(`/api/auth/passkeys/${credentialId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         toast({
           title: 'Passkey Deleted',
           description: 'The passkey has been successfully deleted.',
@@ -84,7 +122,7 @@ export default function SettingsPage() {
       } else {
         toast({
           title: 'Delete Failed',
-          description: response.error || 'Failed to delete passkey',
+          description: data.error || 'Failed to delete passkey',
           variant: 'destructive',
         });
       }
