@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Balance } from '@/types';
+import { Balance, PoolInfo, ReserveStatus } from '@/types';
 import { apiClient } from '@/lib/api/client';
 
 interface WalletState {
@@ -8,6 +8,9 @@ interface WalletState {
   isLoading: boolean;
   error: string | null;
   lastUpdate: Date | null;
+  isTestnet: boolean;
+  poolInfo: PoolInfo | null;
+  reserveStatus: ReserveStatus | null;
   
   // Actions
   setWalletAddress: (address: string | null) => void;
@@ -18,21 +21,46 @@ interface WalletState {
   clearWallet: () => void;
   fetchBalance: (address: string) => Promise<void>;
   fetchEnhancedBalance: (address: string) => Promise<void>;
+  fetchPoolInfo: () => Promise<void>;
+  fetchReserveStatus: () => Promise<void>;
 }
 
-export const useWalletStore = create<WalletState>((set) => ({
-  walletAddress: null,
-  balance: null,
-  isLoading: false,
-  error: null,
-  lastUpdate: null,
+export const useWalletStore = create<WalletState>((set, get) => {
+  // Initialize testnet mode check
+  const checkTestnetMode = () => {
+    const testnetMode = apiClient.isTestnetMode();
+    set({ isTestnet: testnetMode });
+    return testnetMode;
+  };
+
+  // Initial check
+  if (typeof window !== 'undefined') {
+    checkTestnetMode();
+  }
+
+  return {
+    walletAddress: null,
+    balance: null,
+    isLoading: false,
+    error: null,
+    lastUpdate: null,
+    isTestnet: false,
+    poolInfo: null,
+    reserveStatus: null,
   
-  setWalletAddress: (address) => set({ walletAddress: address }),
-  setBalance: (balance) => set({ balance, lastUpdate: new Date() }),
-  setLoading: (loading) => set({ isLoading: loading }),
-  setError: (error) => set({ error }),
-  updateBalance: (balance) => set({ balance, lastUpdate: new Date(), error: null }),
-  clearWallet: () => set({ walletAddress: null, balance: null, error: null, lastUpdate: null }),
+    setWalletAddress: (address) => set({ walletAddress: address }),
+    setBalance: (balance) => set({ balance, lastUpdate: new Date() }),
+    setLoading: (loading) => set({ isLoading: loading }),
+    setError: (error) => set({ error }),
+    updateBalance: (balance) => set({ balance, lastUpdate: new Date(), error: null }),
+    clearWallet: () => set({ 
+      walletAddress: null, 
+      balance: null, 
+      error: null, 
+      lastUpdate: null,
+      poolInfo: null,
+      reserveStatus: null,
+    }),
   
   fetchBalance: async (address: string) => {
     set({ isLoading: true, error: null });
@@ -77,4 +105,35 @@ export const useWalletStore = create<WalletState>((set) => ({
       });
     }
   },
-}));
+
+  fetchPoolInfo: async () => {
+    const isTestnet = get().isTestnet || checkTestnetMode();
+    if (!isTestnet) return;
+
+    try {
+      const response = await apiClient.getPoolInfo();
+      if (response.success && response.data) {
+        set({ poolInfo: response.data as PoolInfo });
+      }
+    } catch (error) {
+      console.error('Failed to fetch pool info:', error);
+      // Don't set error state for pool info as it's optional
+    }
+  },
+
+  fetchReserveStatus: async () => {
+    const isTestnet = get().isTestnet || checkTestnetMode();
+    if (!isTestnet) return;
+
+    try {
+      const response = await apiClient.getReserveStatus();
+      if (response.success && response.data) {
+        set({ reserveStatus: response.data as ReserveStatus });
+      }
+    } catch (error) {
+      console.error('Failed to fetch reserve status:', error);
+      // Don't set error state for reserve status as it's optional
+    }
+  },
+  };
+});

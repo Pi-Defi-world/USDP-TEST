@@ -11,6 +11,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { usePriceStore } from '@/lib/store/priceStore';
 import { useWalletStore } from '@/lib/store/walletStore';
 import { apiClient } from '@/lib/api/client';
+import { TestnetBadge } from '@/components/TestnetBadge';
 import { Loader2, Calculator, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface MintFormProps {
@@ -29,6 +30,7 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
   const { retrieveKeypairForTransaction, setError: clearAuthError } = useAuthStore();
   const { piPrice } = usePriceStore();
   const { balance } = useWalletStore();
+  const isTestnet = apiClient.isTestnetMode();
 
   // Calculate USDP output and fees
   const OVERCOLLATERALIZATION_RATIO = 1.15; // 115% overcollateralization
@@ -91,7 +93,7 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
       
       toast({
         title: 'Mint Successful',
-        description: `Successfully minted ${usdpOutput.toFixed(7)} USDP tokens`,
+        description: `Successfully minted ${usdpOutput.toFixed(7)} USDP tokens${isTestnet ? ' on testnet' : ''}`,
       });
 
       // Refresh balance
@@ -261,15 +263,28 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calculator className="h-5 w-5" />
-          Mint USDP Tokens
-        </CardTitle>
-        <CardDescription>
-          Convert your Pi tokens to USDP stablecoin
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Calculator className="h-5 w-5" />
+              Mint USDP Tokens
+            </CardTitle>
+            <CardDescription>
+              Convert your Pi tokens to USDP stablecoin
+            </CardDescription>
+          </div>
+          {isTestnet && <TestnetBadge />}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {isTestnet && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              On testnet, USD-TEST will be transferred to reserve and 70% of Pi will be allocated to the liquidity pool.
+            </AlertDescription>
+          </Alert>
+        )}
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />

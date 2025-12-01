@@ -200,6 +200,7 @@ export interface Balance {
   };
   piPrice: number;
   lastUpdate: Date;
+  isTestnet?: boolean;
 }
 
 export interface Stats {
@@ -228,6 +229,7 @@ export interface Stats {
   redeemFeeRate: number;
   isFullyBacked: boolean;
   businessModelActive: boolean;
+  isTestnet?: boolean;
 }
 
 export interface Pool {
@@ -405,4 +407,63 @@ export interface SoftLiquidationData {
     penaltyRate: number;
     penaltyAmount: number;
   };
+}
+
+// Testnet-specific types
+export interface CollateralBreakdown {
+  reserve: {
+    piAmount: string;
+    usdTestAmount: string;
+    piValue: string;
+    usdTestValue: string;
+  };
+  pool: {
+    piAmount: string;
+    usdTestAmount: string;
+    piValue: string;
+    usdTestValue: string;
+  };
+  total: {
+    piAmount: string;
+    usdTestAmount: string;
+    totalValue: string;
+    usdcRatio: number;
+    piRatio: number;
+  };
+}
+
+export interface PoolInfo {
+  poolId: string;
+  exists: boolean;
+  totalShares: string;
+  reserves: Array<{
+    asset: string;
+    amount: string;
+  }>;
+}
+
+export interface ReserveStatus {
+  reserve: {
+    publicKey: string;
+    piBalance: string;
+    usdTestBalance: string;
+    piValue: string;
+    usdTestValue: string;
+  };
+  pool: {
+    poolId: string | null;
+    piAmount: string;
+    usdTestAmount: string;
+    piValue: string;
+    usdTestValue: string;
+    totalShares: string;
+  };
+  total: {
+    piAmount: string;
+    usdTestAmount: string;
+    totalValue: string;
+    usdcRatio: number;
+    piRatio: number;
+  };
+  isTestnet: boolean;
 }

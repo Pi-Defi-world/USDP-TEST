@@ -154,6 +154,11 @@ usdp-platform/
    USDP_USDC_TARGET_RATIO=0.70
    USDP_PI_TARGET_RATIO=0.30
    USDP_MIN_OVERCOLLATERALIZATION=1.15
+
+   # Testnet Configuration (Frontend)
+   NEXT_PUBLIC_NETWORK=testnet
+   NEXT_PUBLIC_SERVER_URL=http://localhost:3001
+   NEXT_PUBLIC_USD_TEST_ASSET_CODE=USDTEST
    ```
 
 4. **Run the development server**
@@ -322,6 +327,45 @@ pnpm test:e2e
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🧪 Testnet Support
+
+### Testnet Mode
+
+The frontend supports both testnet and mainnet modes. Testnet mode uses USD-TEST (a synthetic token) instead of USDC for collateral.
+
+#### Testnet Features
+- **USD-TEST Asset**: Synthetic token with hardcoded $1.00 peg
+- **Liquidity Pool**: 70% of Pi collateral allocated to pool, 30% to reserve
+- **Pool Operations**: Automatic swaps between USD-TEST and Pi
+- **Reserve/Pool Breakdown**: Dashboard shows separate reserve and pool balances
+
+#### Environment Variables for Testnet
+
+Add to `.env.local`:
+```env
+# Testnet Configuration
+NEXT_PUBLIC_NETWORK=testnet
+NEXT_PUBLIC_SERVER_URL=http://localhost:3001
+NEXT_PUBLIC_USD_TEST_ASSET_CODE=USDTEST
+```
+
+#### Testnet Detection
+
+The frontend automatically detects testnet mode by:
+1. Checking `NEXT_PUBLIC_NETWORK` environment variable
+2. Checking if hostname includes "testnet"
+
+#### Testnet-Specific UI
+
+- **Testnet Badge**: Appears in navbar and relevant pages
+- **USD-TEST Display**: Shows "USD-TEST" instead of "USDC" throughout the UI
+- **Reserve/Pool Breakdown**: Displays separate reserve and pool balances
+- **Pool Info Card**: Shows liquidity pool information and health metrics
+
+#### Testnet Help
+
+For detailed testnet information, visit `/help/testnet` in the dashboard.
 
 ## ⚠️ Disclaimer
 

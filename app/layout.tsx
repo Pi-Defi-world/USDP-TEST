@@ -13,9 +13,7 @@ export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'USDP Platform',
-  description: 'A production-grade USD-pegged stablecoin built on Pi Network with passkey authentication and real-time pricing',
-  keywords: ['stablecoin', 'pi network', 'cryptocurrency', 'defi', 'passkey', 'authentication'],
-  authors: [{ name: 'Zyra Team' }],
+  description: 'A production-grade USD-pegged stablecoin built on Pi Network',
 };
 
 export const viewport = {
@@ -23,24 +21,17 @@ export const viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
-        <Script id="pi-sdk-init" strategy="afterInteractive" dangerouslySetInnerHTML={{
-          __html: `
-            if (typeof window !== 'undefined' && window.Pi) {
-              window.Pi.init({ version: "2.0", sandbox: true });
-            }
-          `
-        }} />
-      </head>
       <body className={`${inter.className} pb-20 lg:pb-0`}>
+      <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
+      <Script id="pi-init" strategy="beforeInteractive">
+        {`
+          const Pi = window.Pi;
+          Pi.init({ version: "2.0",  sandbox: true});
+        `}
+      </Script>
         <PiProvider>
           <Navbar />
           {children}
