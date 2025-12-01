@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { usePi } from '@/components/providers/pi-provider';
+import { TestnetBadge } from '@/components/TestnetBadge';
+import { apiClient } from '@/lib/api/client';
 import { Home, Settings, LogOut, Wallet, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -11,6 +13,7 @@ export function DashboardNavbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut, isAuthenticated } = usePi();
+  const isTestnet = apiClient.isTestnetMode();
 
   const handleLogout = () => {
     signOut();
@@ -31,6 +34,7 @@ export function DashboardNavbar() {
             <Link href="/dashboard" className="flex items-center space-x-2">
               <Wallet className="h-6 w-6 text-blue-600" />
               <span className="font-bold text-xl">USDP</span>
+              {isTestnet && <TestnetBadge className="ml-2" />}
             </Link>
             <div className="flex items-center space-x-1">
               {navItems.map((item) => {

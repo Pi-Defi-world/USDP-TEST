@@ -35,6 +35,8 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const isTestnet = apiClient.isTestnetMode();
+  const assetLabel = isTestnet ? 'USD-TEST' : 'USDC';
 
   const fetchData = async () => {
     try {
@@ -224,6 +226,11 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
               <div className="text-xs text-muted-foreground">
                 ${((position?.piCollateral || 0) * piPrice).toFixed(2)} USD
               </div>
+              {isTestnet && (
+                <div className="text-xs text-muted-foreground mt-1 italic">
+                  Includes reserve + pool balances
+                </div>
+              )}
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Debt</div>

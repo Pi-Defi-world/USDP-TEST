@@ -214,6 +214,25 @@ class ApiClient {
   async getReserveStatus() {
     return this.request('/health/reserve');
   }
+
+  // Get liquidity pool information
+  async getPoolInfo() {
+    return this.request('/health/pool');
+  }
+
+  // Check if running on testnet
+  isTestnetMode(): boolean {
+    if (typeof window === 'undefined') {
+      // Server-side: check environment variable
+      return process.env.NEXT_PUBLIC_NETWORK === 'testnet';
+    }
+    // Client-side: check environment variable or hostname
+    return (
+      process.env.NEXT_PUBLIC_NETWORK === 'testnet' ||
+      window.location.hostname.includes('testnet')
+    );
+  }
+
   async getStatsLegacy(type: 'dynamic' | 'fixed' = 'dynamic') {
     return this.request(`/stablecoin/stats?type=${type}`);
   }

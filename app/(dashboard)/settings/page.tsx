@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/lib/store/authStore';
-import { AlertCircle, Loader2, Trash2, Shield, Calendar, Monitor } from 'lucide-react';
+import { apiClient } from '@/lib/api/client';
+import { TestnetBadge } from '@/components/TestnetBadge';
+import { Label } from '@/components/ui/label';
+import { AlertCircle, Loader2, Trash2, Shield, Calendar, Monitor, Network } from 'lucide-react';
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -35,6 +38,8 @@ export default function SettingsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const { getPasskeys, deletePasskey } = useAuthStore();
   const { toast } = useToast();
+  const isTestnet = apiClient.isTestnetMode();
+  const usdTestAssetCode = process.env.NEXT_PUBLIC_USD_TEST_ASSET_CODE || 'USDTEST';
 
   const loadPasskeys = async () => {
     setIsLoading(true);
@@ -198,6 +203,50 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Testnet Configuration Section */}
+      {isTestnet && (
+        <Card className="mt-6">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Network className="h-5 w-5" />
+              <CardTitle>Testnet Configuration</CardTitle>
+              <TestnetBadge />
+            </div>
+            <CardDescription>
+              Testnet-specific settings and information
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium">Network</Label>
+                <p className="text-sm text-muted-foreground mt-1">Pi Testnet</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">USD-TEST Asset</Label>
+                <p className="text-sm text-muted-foreground font-mono mt-1">{usdTestAssetCode}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Pool Allocation</Label>
+                <p className="text-sm text-muted-foreground mt-1">70% Pi to Pool</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Reserve Allocation</Label>
+                <p className="text-sm text-muted-foreground mt-1">30% Pi to Reserve</p>
+              </div>
+            </div>
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                On testnet, USD-TEST is used instead of USDC. The system automatically manages liquidity pools
+                and reserve balances. 70% of Pi collateral is allocated to the liquidity pool, while 30% remains
+                in the reserve.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

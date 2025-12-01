@@ -11,6 +11,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { usePriceStore } from '@/lib/store/priceStore';
 import { useWalletStore } from '@/lib/store/walletStore';
 import { apiClient } from '@/lib/api/client';
+import { TestnetBadge } from '@/components/TestnetBadge';
 import { Loader2, Calculator, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface RedeemFormProps {
@@ -29,6 +30,7 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
   const { retrieveKeypairForTransaction, setError: clearAuthError } = useAuthStore();
   const { piPrice } = usePriceStore();
   const { balance } = useWalletStore();
+  const isTestnet = apiClient.isTestnetMode();
 
   // Calculate Pi output and fees
   const usdpAmount = parseFloat(amount) || 0;
@@ -91,7 +93,7 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
       
       toast({
         title: 'Redeem Successful',
-        description: `Successfully redeemed ${piOutput.toFixed(7)} Pi tokens`,
+        description: `Successfully redeemed ${piOutput.toFixed(7)} Pi tokens${isTestnet ? ' on testnet' : ''}`,
       });
 
       // Refresh balance
@@ -249,15 +251,28 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calculator className="h-5 w-5" />
-          Redeem USDP Tokens
-        </CardTitle>
-        <CardDescription>
-          Convert your USDP stablecoin back to Pi tokens
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Calculator className="h-5 w-5" />
+              Redeem USDP Tokens
+            </CardTitle>
+            <CardDescription>
+              Convert your USDP stablecoin back to Pi tokens
+            </CardDescription>
+          </div>
+          {isTestnet && <TestnetBadge />}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {isTestnet && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              If reserve has insufficient Pi, the system will automatically swap USD-TEST for Pi from the pool.
+            </AlertDescription>
+          </Alert>
+        )}
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />

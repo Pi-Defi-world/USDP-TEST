@@ -13,6 +13,11 @@ import { MintForm } from '@/components/MintForm';
 import { RedeemForm } from '@/components/RedeemForm';
 import { TransactionHistory } from '@/components/TransactionHistory';
 import { PositionHealth } from '@/components/PositionHealth';
+import { TestnetBadge } from '@/components/TestnetBadge';
+import { ReservePoolBreakdown } from '@/components/ReservePoolBreakdown';
+import { PoolInfoCard } from '@/components/PoolInfoCard';
+import { apiClient } from '@/lib/api/client';
+import { PoolInfo, ReserveStatus, CollateralBreakdown } from '@/types';
 import { Wallet, TrendingUp, DollarSign, Shield, LogOut, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -22,8 +27,16 @@ export default function DashboardPage() {
   const { piPrice, fetchPiPrice, isLoading: priceLoading } = usePriceStore();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [isTestnet, setIsTestnet] = useState(false);
+  const [poolInfo, setPoolInfo] = useState<PoolInfo | null>(null);
+  const [reserveStatus, setReserveStatus] = useState<ReserveStatus | null>(null);
+  const [collateralBreakdown, setCollateralBreakdown] = useState<CollateralBreakdown | null>(null);
 
   useEffect(() => {
+    // Check if we're in testnet mode
+    const testnetMode = apiClient.isTestnetMode();
+    setIsTestnet(testnetMode);
+
     // If not authenticated with Pi, show message but don't redirect (let user connect wallet)
     if (!isAuthenticated) {
       setIsLoading(false);
@@ -41,6 +54,55 @@ export default function DashboardPage() {
         // Fetch balance if wallet address is available
         if (walletAddress) {
           await fetchBalance(walletAddress);
+        }
+
+        // Fetch testnet-specific data if in testnet mode
+        if (testnetMode) {
+          try {
+            // Fetch pool info
+            const poolResponse = await apiClient.getPoolInfo();
+            if (poolResponse.success && poolResponse.data) {
+              setPoolInfo(poolResponse.data as PoolInfo);
+            }
+          } catch (error) {
+            console.error('Failed to fetch pool info:', error);
+          }
+
+          try {
+            // Fetch reserve status
+            const reserveResponse = await apiClient.getReserveStatus();
+            if (reserveResponse.success && reserveResponse.data) {
+              const status = reserveResponse.data as ReserveStatus;
+              setReserveStatus(status);
+              
+              // Create collateral breakdown from reserve status
+              if (status.reserve && status.pool && status.total) {
+                setCollateralBreakdown({
+                  reserve: {
+                    piAmount: status.reserve.piBalance || '0',
+                    usdTestAmount: status.reserve.usdTestBalance || '0',
+                    piValue: status.reserve.piValue || '0',
+                    usdTestValue: status.reserve.usdTestValue || '0',
+                  },
+                  pool: {
+                    piAmount: status.pool.piAmount || '0',
+                    usdTestAmount: status.pool.usdTestAmount || '0',
+                    piValue: status.pool.piValue || '0',
+                    usdTestValue: status.pool.usdTestValue || '0',
+                  },
+                  total: {
+                    piAmount: status.total.piAmount || '0',
+                    usdTestAmount: status.total.usdTestAmount || '0',
+                    totalValue: status.total.totalValue || '0',
+                    usdcRatio: status.total.usdcRatio || 0,
+                    piRatio: status.total.piRatio || 0,
+                  },
+                });
+              }
+            }
+          } catch (error) {
+            console.error('Failed to fetch reserve status:', error);
+          }
         }
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
@@ -65,12 +127,60 @@ export default function DashboardPage() {
       if (walletAddress) {
         await fetchBalance(walletAddress);
       }
+
+      // Refresh testnet-specific data if in testnet mode
+      if (isTestnet) {
+        try {
+          const poolResponse = await apiClient.getPoolInfo();
+          if (poolResponse.success && poolResponse.data) {
+            setPoolInfo(poolResponse.data as PoolInfo);
+          }
+        } catch (error) {
+          console.error('Failed to refresh pool info:', error);
+        }
+
+        try {
+          const reserveResponse = await apiClient.getReserveStatus();
+          if (reserveResponse.success && reserveResponse.data) {
+            const status = reserveResponse.data as ReserveStatus;
+            setReserveStatus(status);
+            
+            if (status.reserve && status.pool && status.total) {
+              setCollateralBreakdown({
+                reserve: {
+                  piAmount: status.reserve.piBalance || '0',
+                  usdTestAmount: status.reserve.usdTestBalance || '0',
+                  piValue: status.reserve.piValue || '0',
+                  usdTestValue: status.reserve.usdTestValue || '0',
+                },
+                pool: {
+                  piAmount: status.pool.piAmount || '0',
+                  usdTestAmount: status.pool.usdTestAmount || '0',
+                  piValue: status.pool.piValue || '0',
+                  usdTestValue: status.pool.usdTestValue || '0',
+                },
+                total: {
+                  piAmount: status.total.piAmount || '0',
+                  usdTestAmount: status.total.usdTestAmount || '0',
+                  totalValue: status.total.totalValue || '0',
+                  usdcRatio: status.total.usdcRatio || 0,
+                  piRatio: status.total.piRatio || 0,
+                },
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Failed to refresh reserve status:', error);
+        }
+      }
     } catch (error) {
       console.error('Failed to refresh data:', error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const assetLabel = isTestnet ? 'USD-TEST' : 'USDC';
 
   if (!isAuthenticated) {
     return (
@@ -106,7 +216,8 @@ export default function DashboardPage() {
   return (
     <div>
       {/* Welcome Section */}
-      <div className="mb-8">
+      <div className="mb-8 flex items-center justify-between">
+        <div>
           <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
             Welcome back!
           </h2>
@@ -114,6 +225,8 @@ export default function DashboardPage() {
             Manage your ZYRA stablecoin portfolio
           </p>
         </div>
+        {isTestnet && <TestnetBadge />}
+      </div>
 
         {/* Balance Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -186,6 +299,16 @@ export default function DashboardPage() {
               />
             )}
 
+            {/* Testnet-specific: Reserve/Pool Breakdown */}
+            {isTestnet && collateralBreakdown && (
+              <ReservePoolBreakdown breakdown={collateralBreakdown} isTestnet={isTestnet} />
+            )}
+
+            {/* Testnet-specific: Pool Info */}
+            {isTestnet && poolInfo && (
+              <PoolInfoCard poolInfo={poolInfo} isTestnet={isTestnet} />
+            )}
+
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
               <CardHeader>
                 <CardTitle>Account Information</CardTitle>
@@ -255,21 +378,25 @@ export default function DashboardPage() {
           </TabsContent>
 
           <TabsContent value="pools" className="space-y-6">
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-              <CardHeader>
-                <CardTitle>Liquidity Pools</CardTitle>
-                <CardDescription>
-                  Trade and provide liquidity
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">
-                    Pool functionality coming soon...
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            {isTestnet && poolInfo ? (
+              <PoolInfoCard poolInfo={poolInfo} isTestnet={isTestnet} />
+            ) : (
+              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+                <CardHeader>
+                  <CardTitle>Liquidity Pools</CardTitle>
+                  <CardDescription>
+                    Trade and provide liquidity
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">
+                      {isTestnet ? 'Pool information will appear here once initialized' : 'Pool functionality coming soon...'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
     </div>

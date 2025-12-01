@@ -1,41 +1,57 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react"
+import type { PiAuthResult, PiPaymentDTO } from "@/pi-sdk"
 
 interface PiUser {
   uid: string
   username?: string
   wallet_address?: string
-  authenticated_at?: Date
-}
-
-interface PiAuthResult {
-  accessToken: string
-  user: PiUser
 }
 
 interface PiContextType {
   user: PiUser | null
   accessToken: string | null
-  authResult: PiAuthResult | null
   isAuthenticated: boolean
   isLoading: boolean
   authenticate: () => Promise<PiAuthResult>
   signOut: () => void
-  createPayment: (amount: number, memo: string, metadata?: any) => Promise<any>
-  clearAuth: () => void
 }
 
 const PiContext = createContext<PiContextType | undefined>(undefined)
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+
 export function PiProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PiUser | null>(null)
   const [accessToken, setAccessToken] = useState<string | null>(null)
-  const [authResult, setAuthResult] = useState<PiAuthResult | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Initialize Pi SDK on mount
+  // Initialize Pi SDK on mount - simple version
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const initSDK = () => {
+      if (window.Pi && typeof window.Pi.init === 'function') {
+        try {
+          window.Pi.init({ 
+            version: "2.0", 
+            sandbox: true 
+          })
+          console.log("✅ Pi SDK initialized (sandbox: true)")
+        } catch (error) {
+          console.warn("Pi SDK already initialized:", error)
+        }
+      } else {
+        setTimeout(initSDK, 100)
+      }
+    }
+
+    initSDK()
+  }, [])
+
+  // Restore saved auth on mount
   useEffect(() => {
     if (typeof window === "undefined") return
 
@@ -47,167 +63,111 @@ export function PiProvider({ children }: { children: ReactNode }) {
         const userData: PiUser = JSON.parse(savedUser)
         setUser(userData)
         setAccessToken(savedToken)
-        setAuthResult({ accessToken: savedToken, user: userData })
         setIsAuthenticated(true)
+        console.log("✅ Restored auth:", userData.username || userData.uid)
       } catch (error) {
-        console.error("Error restoring saved authentication:", error)
+        console.error("Error restoring auth:", error)
         localStorage.removeItem("pi_access_token")
         localStorage.removeItem("pi_user")
       }
     }
   }, [])
 
-  const authenticate = async (): Promise<PiAuthResult> => {
-    if (typeof window === "undefined") {
-      throw new Error("Window not available. Please refresh the page.")
-    }
-
-    if (!window.Pi) {
-      throw new Error("Pi SDK not available. Please open this app in Pi Browser.")
+  const authenticate = useCallback(async (): Promise<PiAuthResult> => {
+    console.log("🔐 authenticate() called")
+    
+    if (typeof window === 'undefined' || !window.Pi) {
+      throw new Error("Pi SDK not available. Please open in Pi Browser.")
     }
 
     setIsLoading(true)
     try {
-      window.Pi.init({ version: "2.0" })
+      const onIncompletePaymentFound = (payment: PiPaymentDTO) => {
+        console.warn("⚠️ Incomplete payment found:", payment)
+      }
+      
+      console.log("🔑 Calling Pi.authenticate()...")
+      
+      const auth = await window.Pi.authenticate(
+        ["username", "payments", "wallet_address"],
+        onIncompletePaymentFound
+      )
 
-      const onIncompletePaymentFound = (payment: any) => {
-        console.log("⚠️ Incomplete payment found:", payment)
+      console.log("✅ Pi SDK auth SUCCESS!")
+      console.log("📦 Response:", { uid: auth.user.uid, username: auth.user.username })
+
+      const userData: PiUser = {
+        uid: auth.user.uid,
+        username: auth.user.username,
+        wallet_address: auth.user.wallet_address
       }
 
-      const auth = await window.Pi.authenticate(["username", "payments", "wallet_address"], onIncompletePaymentFound)
-
-      const userData: PiUser = auth.user
-      const result: PiAuthResult = {
-        accessToken: auth.accessToken,
-        user: userData,
-      }
-
-      setUser(userData)
-      setAccessToken(auth.accessToken)
-      setAuthResult(result)
-      setIsAuthenticated(true)
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem("pi_access_token", auth.accessToken)
-        localStorage.setItem("pi_user", JSON.stringify(userData))
-        
-        // Sync with backend auth store
-        try {
-          const { useAuthStore } = await import("@/lib/store/authStore")
-          const { signInWithPi } = useAuthStore.getState()
-          await signInWithPi({
+      // Send to backend
+      console.log("📡 Sending to backend:", `${API_URL}/auth/signin`)
+      
+      try {
+        const response = await fetch(`${API_URL}/auth/signin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             accessToken: auth.accessToken,
             user: {
               uid: userData.uid,
-              username: userData.username || "",
-            },
+              username: userData.username || '',
+              wallet_address: userData.wallet_address
+            }
           })
-        } catch (error) {
-          console.error("Failed to sync Pi auth with backend:", error)
-          // Don't throw - Pi auth succeeded, backend sync is optional
+        })
+
+        if (!response.ok) {
+          throw new Error(`Backend signin failed: ${response.status}`)
         }
+
+        const data = await response.json()
+        console.log("📦 Backend response:", data)
+
+        if (data.success && data.data?.user) {
+          if (data.data.user.piUsername) {
+            userData.username = data.data.user.piUsername
+          }
+          if (data.data.token) {
+            localStorage.setItem("auth_token", data.data.token)
+          }
+        }
+      } catch (error) {
+        console.error("❌ Backend call failed:", error)
       }
 
-      return result
+      // Update state
+      setUser(userData)
+      setAccessToken(auth.accessToken)
+      setIsAuthenticated(true)
+
+      // Save to localStorage
+      localStorage.setItem("pi_access_token", auth.accessToken)
+      localStorage.setItem("pi_user", JSON.stringify(userData))
+
+      return { accessToken: auth.accessToken, user: userData }
     } catch (error) {
-      console.error("Pi Network authentication failed:", error)
+      console.error("❌ Pi auth failed:", error)
       throw error
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   const signOut = () => {
     setUser(null)
     setAccessToken(null)
-    setAuthResult(null)
     setIsAuthenticated(false)
-
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("pi_access_token")
-      localStorage.removeItem("pi_user")
-      localStorage.removeItem("auth_token")
-    }
-  }
-
-  const clearAuth = () => {
-    console.log("🧹 Clearing all authentication data...")
-    setUser(null)
-    setAccessToken(null)
-    setAuthResult(null)
-    setIsAuthenticated(false)
-
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("pi_access_token")
-      localStorage.removeItem("pi_user")
-      localStorage.removeItem("pi_has_authenticated")
-      localStorage.removeItem("auth_token")
-    }
-  }
-
-  const createPayment = async (amount: number, memo: string, metadata?: any) => {
-    if (!isAuthenticated) {
-      throw new Error("Not authenticated")
-    }
-
-    if (typeof window === "undefined" || !window.Pi) {
-      throw new Error("Pi SDK not available. Please open in Pi Browser.")
-    }
-
-    try {
-      window.Pi.init({ version: "2.0", sandbox: true })
-
-      return new Promise((resolve, reject) => {
-        const callbacks = {
-          onReadyForServerApproval: async (paymentId: string) => {
-            console.log("Payment ready for approval:", paymentId)
-          },
-
-          onReadyForServerCompletion: async (paymentId: string, txid: string) => {
-            console.log("Payment ready for completion:", paymentId, txid)
-            resolve({ success: true, paymentId, txid })
-          },
-
-          onCancel: (paymentId: string) => {
-            console.log("Payment cancelled:", paymentId)
-            reject(new Error("Payment was cancelled"))
-          },
-
-          onError: (error: Error, payment?: any) => {
-            console.error("Payment error:", error, payment)
-            reject(error)
-          },
-        }
-
-        window.Pi.createPayment(
-          {
-            amount,
-            memo,
-            metadata: metadata || { productId: "token_mint" },
-          },
-          callbacks
-        )
-      })
-    } catch (error) {
-      console.error("Payment creation failed:", error)
-      throw error
-    }
+    localStorage.removeItem("pi_access_token")
+    localStorage.removeItem("pi_user")
+    localStorage.removeItem("auth_token")
+    console.log("✅ Signed out")
   }
 
   return (
-    <PiContext.Provider
-      value={{
-        user,
-        accessToken,
-        authResult,
-        isAuthenticated,
-        isLoading,
-        authenticate,
-        signOut,
-        createPayment,
-        clearAuth,
-      }}
-    >
+    <PiContext.Provider value={{ user, accessToken, isAuthenticated, isLoading, authenticate, signOut }}>
       {children}
     </PiContext.Provider>
   )
@@ -215,9 +175,6 @@ export function PiProvider({ children }: { children: ReactNode }) {
 
 export function usePi() {
   const context = useContext(PiContext)
-  if (context === undefined) {
-    throw new Error("usePi must be used within a PiProvider")
-  }
+  if (!context) throw new Error("usePi must be used within PiProvider")
   return context
 }
-

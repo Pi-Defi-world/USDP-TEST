@@ -4,6 +4,8 @@ import { apiClient } from '@/lib/api/client';
 
 interface PriceState {
   piPrice: number | null;
+  usdTestPrice: number; // Always $1.00 on testnet
+  isTestnet: boolean;
   lastUpdate: Date | null;
   isLoading: boolean;
   error: string | null;
@@ -18,18 +20,37 @@ interface PriceState {
   fetchPiPrice: () => Promise<void>;
 }
 
-export const usePriceStore = create<PriceState>((set) => ({
-  piPrice: null,
-  lastUpdate: null,
-  isLoading: false,
-  error: null,
-  priceHistory: [],
+export const usePriceStore = create<PriceState>((set, get) => {
+  // Check testnet mode
+  const checkTestnetMode = () => {
+    const testnetMode = apiClient.isTestnetMode();
+    set({ isTestnet: testnetMode });
+    return testnetMode;
+  };
+
+  // Initial check
+  if (typeof window !== 'undefined') {
+    checkTestnetMode();
+  }
+
+  return {
+    piPrice: null,
+    usdTestPrice: 1.00, // Always $1.00 on testnet
+    isTestnet: false,
+    lastUpdate: null,
+    isLoading: false,
+    error: null,
+    priceHistory: [],
   
-  setPiPrice: (price) => set({ 
-    piPrice: price, 
-    lastUpdate: new Date(),
-    error: null 
-  }),
+  setPiPrice: (price) => {
+    const isTestnet = get().isTestnet || checkTestnetMode();
+    set({ 
+      piPrice: price, 
+      lastUpdate: new Date(),
+      error: null,
+      isTestnet,
+    });
+  },
   
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),

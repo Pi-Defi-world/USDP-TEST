@@ -7,10 +7,19 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TestnetBadge } from '@/components/TestnetBadge';
+import { ReservePoolBreakdown } from '@/components/ReservePoolBreakdown';
+import { PoolInfoCard } from '@/components/PoolInfoCard';
+import { apiClient } from '@/lib/api/client';
+import { PoolInfo, ReserveStatus, CollateralBreakdown } from '@/types';
 import { TrendingUp, DollarSign, Users, Activity, Shield, Zap } from 'lucide-react';
 
 export default function StatsPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [isTestnet, setIsTestnet] = useState(false);
+  const [poolInfo, setPoolInfo] = useState<PoolInfo | null>(null);
+  const [reserveStatus, setReserveStatus] = useState<ReserveStatus | null>(null);
+  const [collateralBreakdown, setCollateralBreakdown] = useState<CollateralBreakdown | null>(null);
   const [stats, setStats] = useState({
     totalPiReserve: '0.0000000',
     totalUsdReserve: '0.00',
@@ -28,29 +37,93 @@ export default function StatsPage() {
     isFullyBacked: false,
   });
 
-  useEffect(() => {
-    // Simulate loading stats
-    const timer = setTimeout(() => {
-      setStats({
-        totalPiReserve: '206.4231410',
-        totalUsdReserve: '41.34',
-        totalUSDPSupply: '4.9940000',
-        totalUSDPUsdValue: '4.99',
-        backingRatio: '827.79%',
-        reserveSurplus: '36.35',
-        totalFeesCollected: '0.0060000',
-        totalVolume: '2.00',
-        totalMints: 4,
-        totalRedeems: 4,
-        totalTransactions: 15,
-        totalHolders: 1,
-        piPrice: 0.2002595454545454,
-        isFullyBacked: true,
-      });
-      setIsLoading(false);
-    }, 1500);
+  const assetLabel = isTestnet ? 'USD-TEST' : 'USDC';
 
-    return () => clearTimeout(timer);
+  useEffect(() => {
+    // Check if we're in testnet mode
+    const testnetMode = apiClient.isTestnetMode();
+    setIsTestnet(testnetMode);
+
+    const loadStats = async () => {
+      try {
+        setIsLoading(true);
+
+        // Fetch stats from API
+        const statsResponse = await apiClient.getStatsLegacy();
+        if (statsResponse.success && statsResponse.data) {
+          const statsData = statsResponse.data as any;
+          setStats({
+            totalPiReserve: statsData.totalPiReserve || '0.0000000',
+            totalUsdReserve: statsData.totalUsdReserve || '0.00',
+            totalUSDPSupply: statsData.totalUSDPSupply || '0.0000000',
+            totalUSDPUsdValue: statsData.totalUSDPUsdValue || '0.00',
+            backingRatio: statsData.backingRatio || '0.00%',
+            reserveSurplus: statsData.reserveSurplus || '0.00',
+            totalFeesCollected: statsData.totalFeesCollected || '0.0000000',
+            totalVolume: statsData.totalVolume || '0.00',
+            totalMints: statsData.totalMints || 0,
+            totalRedeems: statsData.totalRedeems || 0,
+            totalTransactions: statsData.totalTransactions || 0,
+            totalHolders: statsData.totalHolders || 0,
+            piPrice: statsData.piPrice || 0,
+            isFullyBacked: statsData.isFullyBacked || false,
+          });
+        }
+
+        // Fetch testnet-specific data if in testnet mode
+        if (testnetMode) {
+          try {
+            const poolResponse = await apiClient.getPoolInfo();
+            if (poolResponse.success && poolResponse.data) {
+              setPoolInfo(poolResponse.data as PoolInfo);
+            }
+          } catch (error) {
+            console.error('Failed to fetch pool info:', error);
+          }
+
+          try {
+            const reserveResponse = await apiClient.getReserveStatus();
+            if (reserveResponse.success && reserveResponse.data) {
+              const status = reserveResponse.data as ReserveStatus;
+              setReserveStatus(status);
+              
+              if (status.reserve && status.pool && status.total) {
+                setCollateralBreakdown({
+                  reserve: {
+                    piAmount: status.reserve.piBalance || '0',
+                    usdTestAmount: status.reserve.usdTestBalance || '0',
+                    piValue: status.reserve.piValue || '0',
+                    usdTestValue: status.reserve.usdTestValue || '0',
+                  },
+                  pool: {
+                    piAmount: status.pool.piAmount || '0',
+                    usdTestAmount: status.pool.usdTestAmount || '0',
+                    piValue: status.pool.piValue || '0',
+                    usdTestValue: status.pool.usdTestValue || '0',
+                  },
+                  total: {
+                    piAmount: status.total.piAmount || '0',
+                    usdTestAmount: status.total.usdTestAmount || '0',
+                    totalValue: status.total.totalValue || '0',
+                    usdcRatio: status.total.usdcRatio || 0,
+                    piRatio: status.total.piRatio || 0,
+                  },
+                });
+              }
+            }
+          } catch (error) {
+            console.error('Failed to fetch reserve status:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load stats:', error);
+        // Fallback to default values
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadStats();
   }, []);
 
   if (isLoading) {
@@ -87,9 +160,12 @@ export default function StatsPage() {
       <div className="container mx-auto py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-            USDP Statistics
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100">
+              USDP Statistics
+            </h1>
+            {isTestnet && <TestnetBadge />}
+          </div>
           <p className="text-slate-600 dark:text-slate-300">
             Real-time data from the USDP stablecoin system
           </p>
@@ -99,14 +175,27 @@ export default function StatsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pi Reserve</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                {isTestnet && collateralBreakdown ? 'Total Pi (Reserve + Pool)' : 'Pi Reserve'}
+              </CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalPiReserve} Pi</div>
+              <div className="text-2xl font-bold">
+                {isTestnet && collateralBreakdown 
+                  ? `${collateralBreakdown.total.piAmount} Pi`
+                  : `${stats.totalPiReserve} Pi`}
+              </div>
               <p className="text-xs text-muted-foreground">
-                ${stats.totalUsdReserve} USD
+                ${isTestnet && collateralBreakdown 
+                  ? collateralBreakdown.total.totalValue
+                  : stats.totalUsdReserve} USD
               </p>
+              {isTestnet && collateralBreakdown && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Reserve: {collateralBreakdown.reserve.piAmount} Pi | Pool: {collateralBreakdown.pool.piAmount} Pi
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -256,12 +345,34 @@ export default function StatsPage() {
                 <span className="text-sm font-medium">Network</span>
                 <Badge variant="secondary">
                   <Zap className="h-3 w-3 mr-1" />
-                  Pi Testnet
+                  {isTestnet ? 'Pi Testnet' : 'Pi Network'}
                 </Badge>
               </div>
+              {isTestnet && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Collateral Asset</span>
+                  <span className="text-sm font-bold text-yellow-600 dark:text-yellow-400">
+                    {assetLabel}
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Testnet-specific: Reserve/Pool Breakdown */}
+        {isTestnet && collateralBreakdown && (
+          <div className="mb-8">
+            <ReservePoolBreakdown breakdown={collateralBreakdown} isTestnet={isTestnet} />
+          </div>
+        )}
+
+        {/* Testnet-specific: Pool Info */}
+        {isTestnet && poolInfo && (
+          <div className="mb-8">
+            <PoolInfoCard poolInfo={poolInfo} isTestnet={isTestnet} />
+          </div>
+        )}
       </div>
     </div>
   );
