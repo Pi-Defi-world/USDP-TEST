@@ -19,17 +19,14 @@ import { PoolInfoCard } from '@/components/PoolInfoCard';
 import { apiClient } from '@/lib/api/client';
 import { PoolInfo, ReserveStatus, CollateralBreakdown } from '@/types';
 import { Wallet, TrendingUp, DollarSign, Shield, LogOut, RefreshCw } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const { isAuthenticated, user } = usePi();
-  const { walletAddress, balance, fetchBalance, isLoading: walletLoading } = useWalletStore();
-  const { piPrice, fetchPiPrice, isLoading: priceLoading } = usePriceStore();
-  const router = useRouter();
+  const { walletAddress, balance, fetchBalance } = useWalletStore();
+  const { piPrice, fetchPiPrice } = usePriceStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isTestnet, setIsTestnet] = useState(false);
   const [poolInfo, setPoolInfo] = useState<PoolInfo | null>(null);
-  const [reserveStatus, setReserveStatus] = useState<ReserveStatus | null>(null);
   const [collateralBreakdown, setCollateralBreakdown] = useState<CollateralBreakdown | null>(null);
 
   useEffect(() => {
@@ -73,7 +70,6 @@ export default function DashboardPage() {
             const reserveResponse = await apiClient.getReserveStatus();
             if (reserveResponse.success && reserveResponse.data) {
               const status = reserveResponse.data as ReserveStatus;
-              setReserveStatus(status);
               
               // Create collateral breakdown from reserve status
               if (status.reserve && status.pool && status.total) {
@@ -143,7 +139,6 @@ export default function DashboardPage() {
           const reserveResponse = await apiClient.getReserveStatus();
           if (reserveResponse.success && reserveResponse.data) {
             const status = reserveResponse.data as ReserveStatus;
-            setReserveStatus(status);
             
             if (status.reserve && status.pool && status.total) {
               setCollateralBreakdown({
@@ -180,7 +175,6 @@ export default function DashboardPage() {
     }
   };
 
-  const assetLabel = isTestnet ? 'USD-TEST' : 'USDC';
 
   if (!isAuthenticated) {
     return (
@@ -194,7 +188,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground text-center">
-              Use the "Connect Wallet" button in the navigation bar to get started.
+              Use the &quot;Connect Wallet&quot; button in the navigation bar to get started.
             </p>
           </CardContent>
         </Card>
@@ -292,7 +286,6 @@ export default function DashboardPage() {
                 walletAddress={walletAddress}
                 onActionClick={(action) => {
                   // Navigate to mint/redeem tab based on action type
-                  const tab = action.type === 'ADD_COLLATERAL' ? 'mint' : 'redeem';
                   // This would require state management to switch tabs
                   console.log('Action clicked:', action);
                 }}

@@ -10,8 +10,6 @@ import {
   MessageCircle,
   LogOut,
   Loader2,
-  Coins,
-  Droplets,
   User,
   Shield,
   Wallet,
