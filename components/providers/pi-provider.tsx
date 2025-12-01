@@ -20,7 +20,7 @@ interface PiContextType {
 
 const PiContext = createContext<PiContextType | undefined>(undefined)
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+const API_URL = process.env.NEXT_PUBLIC_API_URL 
 
 export function PiProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PiUser | null>(null)
@@ -37,9 +37,9 @@ export function PiProvider({ children }: { children: ReactNode }) {
         try {
           window.Pi.init({ 
             version: "2.0", 
-            sandbox: true 
+            sandbox: false
           })
-          console.log("✅ Pi SDK initialized (sandbox: true)")
+          console.log("✅ Pi SDK initialized")
         } catch (error) {
           console.warn("Pi SDK already initialized:", error)
         }
