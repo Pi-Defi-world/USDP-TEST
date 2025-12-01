@@ -42,30 +42,30 @@ export const usePriceStore = create<PriceState>((set, get) => {
     error: null,
     priceHistory: [],
   
-  setPiPrice: (price) => {
-    const isTestnet = get().isTestnet || checkTestnetMode();
-    set({ 
-      piPrice: price, 
-      lastUpdate: new Date(),
-      error: null,
-      isTestnet,
-    });
-  },
+    setPiPrice: (price) => {
+      const isTestnet = get().isTestnet || checkTestnetMode();
+      set({ 
+        piPrice: price, 
+        lastUpdate: new Date(),
+        error: null,
+        isTestnet,
+      });
+    },
   
-  setLoading: (loading) => set({ isLoading: loading }),
-  setError: (error) => set({ error }),
+    setLoading: (loading) => set({ isLoading: loading }),
+    setError: (error) => set({ error }),
   
-  addPriceToHistory: (price) =>
-    set((state) => ({
-      priceHistory: [
-        { price, timestamp: new Date() },
-        ...state.priceHistory.slice(0, 99)  
-      ]
-    })),
+    addPriceToHistory: (price) =>
+      set((state) => ({
+        priceHistory: [
+          { price, timestamp: new Date() },
+          ...state.priceHistory.slice(0, 99)  
+        ]
+      })),
   
-  clearPriceHistory: () => set({ priceHistory: [] }),
+    clearPriceHistory: () => set({ priceHistory: [] }),
   
-  fetchPiPrice: async () => {
+    fetchPiPrice: async () => {
     set({ isLoading: true, error: null });
     try {
       const response = await apiClient.getPiPrice();
@@ -94,7 +94,8 @@ export const usePriceStore = create<PriceState>((set, get) => {
       });
     }
   },
-}));
+  };
+});
 
 interface StatsState {
   stats: Stats | null;
