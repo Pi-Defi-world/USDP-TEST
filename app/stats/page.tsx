@@ -11,7 +11,7 @@ import { TestnetBadge } from '@/components/TestnetBadge';
 import { ReservePoolBreakdown } from '@/components/ReservePoolBreakdown';
 import { PoolInfoCard } from '@/components/PoolInfoCard';
 import { apiClient } from '@/lib/api/client';
-import { PoolInfo, ReserveStatus, CollateralBreakdown } from '@/types';
+import { PoolInfo, ReserveStatus, CollateralBreakdown, Stats } from '@/types';
 import { TrendingUp, DollarSign, Users, Activity, Shield, Zap } from 'lucide-react';
 
 export default function StatsPage() {
@@ -51,7 +51,7 @@ export default function StatsPage() {
         // Fetch stats from API
         const statsResponse = await apiClient.getStatsLegacy();
         if (statsResponse.success && statsResponse.data) {
-          const statsData = statsResponse.data as any;
+          const statsData = statsResponse.data as Partial<Stats>;
           setStats({
             totalPiReserve: statsData.totalPiReserve || '0.0000000',
             totalUsdReserve: statsData.totalUsdReserve || '0.00',

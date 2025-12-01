@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 export function DashboardNavbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { signOut, isAuthenticated } = usePi();
+  const { signOut } = usePi();
   const isTestnet = apiClient.isTestnetMode();
 
   const handleLogout = () => {

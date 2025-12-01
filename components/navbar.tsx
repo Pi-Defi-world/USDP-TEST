@@ -80,7 +80,7 @@ function MobileBottomNav() {
   )
 }
 
-export function Navbar(_props: NavbarProps) {
+export function Navbar() {
   const { user, isAuthenticated, authenticate, signOut } = usePi()
   const [mounted, setMounted] = useState(false)
   const [authLoading, setAuthLoading] = useState(false)
