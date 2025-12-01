@@ -1,0 +1,261 @@
+name: Sync to Vercel Repo
+
+on:
+  push:
+    branches:
+      - testnet
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify and set GitHub token
+        id: token_setup
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN_GITHUB }}
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+        run: |
+          # Determine which token to use (prefer API_TOKEN_GITHUB, fallback to DEPLOY_TOKEN)
+          if [ -n "$API_TOKEN" ]; then
+            SELECTED_TOKEN="$API_TOKEN"
+            TOKEN_NAME="API_TOKEN_GITHUB"
+          elif [ -n "$DEPLOY_TOKEN" ]; then
+            SELECTED_TOKEN="$DEPLOY_TOKEN"
+            TOKEN_NAME="DEPLOY_TOKEN"
+          else
+            echo "❌ Error: GitHub token secret is missing!"
+            echo "Please set either API_TOKEN_GITHUB or DEPLOY_TOKEN secret in repository settings"
+            exit 1
+          fi
+          
+          # Store token (masked) for use in subsequent steps
+          echo "::add-mask::$SELECTED_TOKEN"
+          echo "TOKEN_NAME=$TOKEN_NAME" >> $GITHUB_OUTPUT
+          
+          # Test token validity
+          if ! curl -s -H "Authorization: token $SELECTED_TOKEN" \
+            "https://api.github.com/user" | grep -q '"login"'; then
+            echo "❌ Error: GitHub token is invalid or lacks permissions!"
+            exit 1
+          fi
+          echo "✅ GitHub token is valid (using $TOKEN_NAME)"
+
+      - name: Check if destination repo exists
+        id: check_repo
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN_GITHUB }}
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+        run: |
+          # Use the same token selection logic
+          if [ -n "$API_TOKEN" ]; then
+            GITHUB_TOKEN="$API_TOKEN"
+          else
+            GITHUB_TOKEN="$DEPLOY_TOKEN"
+          fi
+          
+          REPO_NAME="USDP-TEST-FRONTEND"
+          OWNER="junman140"
+          
+          echo "Checking if repository $OWNER/$REPO_NAME exists..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$OWNER/$REPO_NAME")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          if [ "$HTTP_CODE" = "200" ] && echo "$BODY" | grep -q '"name"'; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Repository $OWNER/$REPO_NAME exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Repository $OWNER/$REPO_NAME does not exist (HTTP $HTTP_CODE)"
+          fi
+
+      - name: Create repository if it doesn't exist
+        if: steps.check_repo.outputs.exists == 'false'
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN_GITHUB }}
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+        run: |
+          # Use the same token selection logic
+          if [ -n "$API_TOKEN" ]; then
+            GITHUB_TOKEN="$API_TOKEN"
+          else
+            GITHUB_TOKEN="$DEPLOY_TOKEN"
+          fi
+          
+          REPO_NAME="USDP-TEST-FRONTEND"
+          OWNER="junman140"
+          
+          echo "Creating repository $OWNER/$REPO_NAME..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/user/repos" \
+            -d "{\"name\":\"$REPO_NAME\",\"private\":false,\"auto_init\":true,\"default_branch\":\"main\"}")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          if [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "422" ]; then
+            echo "✅ Repository created or already exists"
+          else
+            echo "❌ Failed to create repository (HTTP $HTTP_CODE)"
+            echo "Response: $BODY"
+            exit 1
+          fi
+          
+          # Wait for GitHub to initialize the repository
+          echo "Waiting for repository initialization..."
+          sleep 5
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "GitHub Actions"
+          git config --global init.defaultBranch main
+          git config --global --add safe.directory /github/workspace
+
+      - name: Sync to destination repository
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN_GITHUB }}
+          DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+        run: |
+          set -e  # Exit on error
+          
+          # Use the same token selection logic
+          if [ -n "$API_TOKEN" ]; then
+            GITHUB_TOKEN="$API_TOKEN"
+          else
+            GITHUB_TOKEN="$DEPLOY_TOKEN"
+          fi
+          
+          REPO_NAME="USDP-TEST-FRONTEND"
+          OWNER="junman140"
+          DESTINATION_REPO="https://$GITHUB_TOKEN@github.com/$OWNER/$REPO_NAME.git"
+          TEMP_DIR="temp_sync_repo"
+          
+          # Clean up any existing temp directory
+          rm -rf "$TEMP_DIR"
+          
+          # Clone the destination repository with retry logic
+          echo "Cloning destination repository..."
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          CLONE_SUCCESS=false
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if git clone "$DESTINATION_REPO" --branch main --single-branch "$TEMP_DIR" 2>&1; then
+              CLONE_SUCCESS=true
+              echo "✅ Successfully cloned repository"
+              break
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              echo "⚠️ Clone attempt $RETRY_COUNT failed, retrying in 3 seconds..."
+              sleep 3
+            fi
+          done
+          
+          # If clone failed, initialize a new repository structure
+          if [ "$CLONE_SUCCESS" = "false" ]; then
+            echo "⚠️ Clone failed, initializing new repository structure..."
+            mkdir -p "$TEMP_DIR"
+            cd "$TEMP_DIR"
+            git init
+            git checkout -b main
+            git remote add origin "$DESTINATION_REPO"
+            
+            # Create initial commit
+            echo "# $REPO_NAME" > README.md
+            git add README.md
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git config user.name "GitHub Actions"
+            git commit -m "Initial commit"
+            
+            # Push initial commit with retry
+            RETRY_COUNT=0
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              if git push -u origin main 2>&1; then
+                echo "✅ Initial commit pushed successfully"
+                break
+              else
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                echo "⚠️ Push attempt $RETRY_COUNT failed, retrying in 3 seconds..."
+                sleep 3
+              fi
+            done
+            
+            cd ..
+            
+            # Now try to clone again
+            if ! git clone "$DESTINATION_REPO" --branch main --single-branch "$TEMP_DIR" 2>&1; then
+              echo "❌ Failed to clone repository after initialization"
+              exit 1
+            fi
+          fi
+          
+          # Sync files from source to destination
+          echo "Syncing files..."
+          cd "$TEMP_DIR"
+          
+          # Remove all files except .git
+          find . -not -path './.git*' -delete
+          
+          # Copy files from source (excluding .git and .github/workflows)
+          rsync -av --delete \
+            --exclude '.git' \
+            --exclude '.github/workflows' \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude 'temp_sync_repo' \
+            ../ "$TEMP_DIR/"
+          
+          # Configure git for this repository
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "GitHub Actions"
+          
+          # Check if there are changes
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Changes detected, committing and pushing..."
+            git add -A
+            git commit -m "Sync source code for Vercel build 🚀 [skip ci]"
+            
+            # Push with retry logic
+            RETRY_COUNT=0
+            PUSH_SUCCESS=false
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              if git push origin main 2>&1; then
+                PUSH_SUCCESS=true
+                echo "✅ Synced successfully!"
+                break
+              else
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                echo "⚠️ Push attempt $RETRY_COUNT failed, retrying in 3 seconds..."
+                sleep 3
+                
+                # Try to pull and rebase if there are conflicts
+                if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                  git pull --rebase origin main || true
+                fi
+              fi
+            done
+            
+            if [ "$PUSH_SUCCESS" = "false" ]; then
+              echo "❌ Failed to push after $MAX_RETRIES attempts"
+              exit 1
+            fi
+          else
+            echo "🟢 No changes detected — skipping commit."
+          fi
+          
+          # Clean up
+          cd ..
+          rm -rf "$TEMP_DIR"
+          echo "✅ Sync completed successfully"
