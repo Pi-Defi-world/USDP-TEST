@@ -219,17 +219,30 @@ jobs:
           
           # Verify critical files are present
           echo "Verifying critical files..."
+          echo "Files in destination directory:"
+          ls -la "$TEMP_DIR" | head -20
+          
           if [ ! -f "$TEMP_DIR/package.json" ]; then
             echo "❌ ERROR: package.json is missing after sync!"
+            echo "Listing all files in destination:"
+            find "$TEMP_DIR" -type f -name "*.json" | head -10
             exit 1
           fi
+          
+          echo "✅ package.json found"
+          echo "Contents of package.json (first 50 lines):"
+          head -50 "$TEMP_DIR/package.json"
           
           if ! grep -q '"next"' "$TEMP_DIR/package.json"; then
             echo "❌ ERROR: Next.js not found in package.json!"
+            echo "Searching for 'next' in package.json:"
+            grep -i "next" "$TEMP_DIR/package.json" || echo "No 'next' found"
             exit 1
           fi
           
+          NEXT_VERSION=$(grep -o '"next":\s*"[^"]*"' "$TEMP_DIR/package.json" | head -1)
           echo "✅ Critical files verified: package.json exists and contains Next.js"
+          echo "Next.js version in package.json: $NEXT_VERSION"
           
           # Configure git for this repository
           git config user.email "github-actions[bot]@users.noreply.github.com"
