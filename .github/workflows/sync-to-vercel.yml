@@ -203,29 +203,60 @@ jobs:
           
           # Sync files from source to destination
           echo "Syncing files..."
+          WORKSPACE_ROOT="$(pwd)"
+          
+          echo "Workspace root: $WORKSPACE_ROOT"
+          echo "Source files check:"
+          ls -la "$WORKSPACE_ROOT" | head -15
+          
+          # Remove all files except .git from destination
           cd "$TEMP_DIR"
+          echo "Cleaning destination directory..."
+          find . -not -path './.git*' -not -path './.git' -delete
           
-          # Remove all files except .git
-          find . -not -path './.git*' -delete
+          # Copy files from source to destination (excluding .git and .github/workflows)
+          echo "Source directory: $WORKSPACE_ROOT"
+          echo "Destination directory: $(pwd)"
+          echo "Starting rsync..."
           
-          # Copy files from source (excluding .git and .github/workflows)
           rsync -av --delete \
             --exclude '.git' \
             --exclude '.github/workflows' \
             --exclude 'node_modules' \
             --exclude '.next' \
             --exclude 'temp_sync_repo' \
-            ../ "$TEMP_DIR/"
+            --exclude '.vercel' \
+            --exclude '.env*' \
+            "$WORKSPACE_ROOT/" .
+          
+          echo "Rsync completed. Files in destination:"
+          ls -la | head -20
+          echo ""
+          echo "Sample of synced files:"
+          find . -type f -not -path './.git/*' | head -30
+          echo ""
+          echo "Total files synced: $(find . -type f -not -path './.git/*' | wc -l)"
+          
+          # Return to workspace root for verification
+          cd "$WORKSPACE_ROOT"
           
           # Verify critical files are present
           echo "Verifying critical files..."
           echo "Files in destination directory:"
-          ls -la "$TEMP_DIR" | head -20
+          ls -la "$TEMP_DIR" | head -30
+          
+          echo "Total files synced:"
+          find "$TEMP_DIR" -type f | wc -l
+          
+          echo "Key directories synced:"
+          ls -la "$TEMP_DIR/" | grep "^d" | head -10
           
           if [ ! -f "$TEMP_DIR/package.json" ]; then
             echo "❌ ERROR: package.json is missing after sync!"
             echo "Listing all files in destination:"
             find "$TEMP_DIR" -type f -name "*.json" | head -10
+            echo "Checking if source has package.json:"
+            ls -la "$SOURCE_DIR/package.json" || echo "Source package.json not found either!"
             exit 1
           fi
           
@@ -244,7 +275,19 @@ jobs:
           echo "✅ Critical files verified: package.json exists and contains Next.js"
           echo "Next.js version in package.json: $NEXT_VERSION"
           
+          # Verify other critical files
+          echo "Verifying other critical files..."
+          CRITICAL_FILES=("next.config.js" "tsconfig.json" "tailwind.config.ts" "app/layout.tsx")
+          for file in "${CRITICAL_FILES[@]}"; do
+            if [ -f "$TEMP_DIR/$file" ]; then
+              echo "✅ $file exists"
+            else
+              echo "⚠️ WARNING: $file missing (may not be critical)"
+            fi
+          done
+          
           # Configure git for this repository
+          cd "$TEMP_DIR"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "GitHub Actions"
           
