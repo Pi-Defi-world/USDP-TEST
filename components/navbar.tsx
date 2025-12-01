@@ -7,11 +7,6 @@ import { usePi } from "@/components/providers/pi-provider"
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 
-interface NavbarProps {
-  isConnected?: boolean
-  onConnect?: () => void
-}
-
 // Mobile Bottom Navigation Component
 function MobileBottomNav() {
   const pathname = usePathname()

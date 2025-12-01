@@ -165,7 +165,7 @@ export default function TestnetHelpPage() {
                 <h3 className="font-semibold mb-2">USD-TEST Not Showing</h3>
                 <p className="text-sm text-muted-foreground">
                   Ensure that <code className="bg-muted px-1 rounded">NEXT_PUBLIC_NETWORK=testnet</code> is set
-                  in your environment variables, or that your hostname includes "testnet".
+                  in your environment variables, or that your hostname includes &quot;testnet&quot;.
                 </p>
               </div>
             </div>
@@ -182,7 +182,7 @@ export default function TestnetHelpPage() {
             <div className="space-y-2">
               <div className="p-3 bg-muted rounded-lg font-mono text-sm">
                 <div>NEXT_PUBLIC_NETWORK=testnet</div>
-                <div className="text-muted-foreground mt-1"># Set to 'testnet' or 'mainnet'</div>
+                <div className="text-muted-foreground mt-1"># Set to &apos;testnet&apos; or &apos;mainnet&apos;</div>
               </div>
               <div className="p-3 bg-muted rounded-lg font-mono text-sm">
                 <div>NEXT_PUBLIC_SERVER_URL=http://localhost:3001</div>

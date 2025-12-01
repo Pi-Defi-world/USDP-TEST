@@ -18,7 +18,6 @@ export default function StatsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isTestnet, setIsTestnet] = useState(false);
   const [poolInfo, setPoolInfo] = useState<PoolInfo | null>(null);
-  const [reserveStatus, setReserveStatus] = useState<ReserveStatus | null>(null);
   const [collateralBreakdown, setCollateralBreakdown] = useState<CollateralBreakdown | null>(null);
   const [stats, setStats] = useState({
     totalPiReserve: '0.0000000',
@@ -85,7 +84,6 @@ export default function StatsPage() {
             const reserveResponse = await apiClient.getReserveStatus();
             if (reserveResponse.success && reserveResponse.data) {
               const status = reserveResponse.data as ReserveStatus;
-              setReserveStatus(status);
               
               if (status.reserve && status.pool && status.total) {
                 setCollateralBreakdown({
