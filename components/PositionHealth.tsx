@@ -353,10 +353,11 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
                           onClick={async () => {
                             try {
                               const response = await apiClient.acceptSoftLiquidation(walletAddress, offer.id);
-                              if (response.success) {
+                              if (response.success && response.data) {
+                                const data = response.data as { debtToRepay: number; penaltyAmount: number };
                                 toast({
                                   title: 'Soft Liquidation Accepted',
-                                  description: `You will repay ${response.data.debtToRepay.toFixed(2)} USDP with a ${response.data.penaltyAmount.toFixed(2)} USDP penalty.`,
+                                  description: `You will repay ${data.debtToRepay.toFixed(2)} USDP with a ${data.penaltyAmount.toFixed(2)} USDP penalty.`,
                                 });
                                 fetchData();
                               }
