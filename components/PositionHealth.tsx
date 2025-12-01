@@ -150,7 +150,9 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
   const progressValue = Math.min(100, (collateralRatio / safeZone) * 100);
 
   // Health status colors and icons
-  const healthConfig = {
+  type HealthStatus = 'NO_POSITION' | 'SAFE' | 'CAUTION' | 'WARNING' | 'DANGER' | 'LIQUIDATION';
+  const healthConfig: Record<HealthStatus, { color: string; bg: string; icon: typeof CheckCircle; label: string }> = {
+    NO_POSITION: { color: 'text-gray-600', bg: 'bg-gray-50', icon: Shield, label: 'No Position' },
     SAFE: { color: 'text-green-600', bg: 'bg-green-50', icon: CheckCircle, label: 'Safe Zone' },
     CAUTION: { color: 'text-yellow-600', bg: 'bg-yellow-50', icon: AlertTriangle, label: 'Caution Zone' },
     WARNING: { color: 'text-orange-600', bg: 'bg-orange-50', icon: AlertTriangle, label: 'Warning Zone' },
@@ -158,7 +160,7 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
     LIQUIDATION: { color: 'text-red-700', bg: 'bg-red-100', icon: AlertCircle, label: 'Liquidation Risk' },
   };
 
-  const healthInfo = healthConfig[health] || healthConfig.SAFE;
+  const healthInfo = healthConfig[health as HealthStatus] || healthConfig.SAFE;
   const HealthIcon = healthInfo.icon;
 
   // Volatility tier badge
