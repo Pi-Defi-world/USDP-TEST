@@ -64,7 +64,7 @@ export function decryptWithPassword(encryptedSecretBase64: string, password: str
 
   try {
     return decrypted.toString(CryptoJS.enc.Utf8);
-  } catch (e) {
+  } catch {
     throw new Error('Decryption failed. Incorrect password or corrupted data.');
   }
 }

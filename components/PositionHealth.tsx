@@ -14,8 +14,6 @@ import {
   AlertCircle, 
   CheckCircle, 
   TrendingUp, 
-  TrendingDown,
-  Clock,
   Plus,
   Minus,
   RefreshCw,
@@ -36,7 +34,6 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const isTestnet = apiClient.isTestnetMode();
-  const assetLabel = isTestnet ? 'USD-TEST' : 'USDC';
 
   const fetchData = async () => {
     try {

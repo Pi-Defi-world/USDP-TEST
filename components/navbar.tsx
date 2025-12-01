@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Moon, Sun, Wallet, Home, Coins, Droplets, User, ArrowRightLeft } from "lucide-react"
+import { Wallet, Home, Coins, Droplets, User, ArrowRightLeft } from "lucide-react"
 import Link from "next/link"
 import { usePi } from "@/components/providers/pi-provider"
 import { useState, useEffect } from "react"
@@ -80,7 +80,7 @@ function MobileBottomNav() {
   )
 }
 
-export function Navbar({ isConnected = false, onConnect }: NavbarProps) {
+export function Navbar(_props: NavbarProps) {
   const { user, isAuthenticated, authenticate, signOut } = usePi()
   const [mounted, setMounted] = useState(false)
   const [authLoading, setAuthLoading] = useState(false)
