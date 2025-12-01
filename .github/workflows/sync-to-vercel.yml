@@ -217,6 +217,20 @@ jobs:
             --exclude 'temp_sync_repo' \
             ../ "$TEMP_DIR/"
           
+          # Verify critical files are present
+          echo "Verifying critical files..."
+          if [ ! -f "$TEMP_DIR/package.json" ]; then
+            echo "❌ ERROR: package.json is missing after sync!"
+            exit 1
+          fi
+          
+          if ! grep -q '"next"' "$TEMP_DIR/package.json"; then
+            echo "❌ ERROR: Next.js not found in package.json!"
+            exit 1
+          fi
+          
+          echo "✅ Critical files verified: package.json exists and contains Next.js"
+          
           # Configure git for this repository
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "GitHub Actions"
