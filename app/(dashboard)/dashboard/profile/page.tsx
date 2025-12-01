@@ -221,14 +221,22 @@ export default function ProfilePage() {
             {balance && (
               <div className="grid grid-cols-2 gap-3 text-center pt-2">
                 <div className="p-2 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">Balance</p>
+                  <p className="text-xs text-muted-foreground">Pi Balance</p>
                   <p className="text-sm font-semibold">
-                    {balance.balances?.[0]?.amount?.toFixed(2) || "0.00"} {balance.balances?.[0]?.assetCode || "PI"}
+                    {balance.pi?.amount || "0.0000000"} Pi
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    ${balance.pi?.usdValue || "0.00"} USD
                   </p>
                 </div>
                 <div className="p-2 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">Assets</p>
-                  <p className="text-sm font-semibold">{balance.balances?.length || 0}</p>
+                  <p className="text-xs text-muted-foreground">USDP Balance</p>
+                  <p className="text-sm font-semibold">
+                    {balance.usdp?.amount || balance.zyra?.amount || "0.0000000"} USDP
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    ${balance.usdp?.usdValue || balance.zyra?.usdValue || "0.00"} USD
+                  </p>
                 </div>
               </div>
             )}
