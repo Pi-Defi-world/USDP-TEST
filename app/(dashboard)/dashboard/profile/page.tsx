@@ -14,18 +14,15 @@ import {
   Droplets,
   User,
   Shield,
-  History,
   Wallet,
 } from "lucide-react"
 import { usePi } from "@/components/providers/pi-provider"
 import { useAuthStore } from "@/lib/store/authStore"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { apiClient } from "@/lib/api/client"
 import { useWalletStore } from "@/lib/store/walletStore"
 
 const normalizeMnemonic = (value: string) =>
@@ -36,12 +33,12 @@ const normalizeMnemonic = (value: string) =>
     .join(" ")
 
 export default function ProfilePage() {
-  const { user, isAuthenticated, authenticate, signOut, accessToken } = usePi()
+  const { user, isAuthenticated, signOut, accessToken } = usePi()
   const { signInWithPi } = useAuthStore()
   const { toast } = useToast()
   const { walletAddress, balance, fetchBalance } = useWalletStore()
   const [storedWalletAddress, setStoredWalletAddress] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading] = useState(false)
   const [secretInput, setSecretInput] = useState("")
   const [mnemonicInput, setMnemonicInput] = useState("")
   const [isImporting, setIsImporting] = useState(false)
@@ -131,7 +128,7 @@ export default function ProfilePage() {
         throw new Error(data.error || "Import failed")
       }
     } catch (err) {
-      const message = err && typeof err === "object" && "message" in err ? (err as any).message : "Import failed"
+      const message = err && typeof err === "object" && "message" in err ? (err as Error).message : "Import failed"
       toast({ 
         title: "Import failed", 
         description: message, 

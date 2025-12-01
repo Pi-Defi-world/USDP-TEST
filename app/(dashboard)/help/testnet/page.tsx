@@ -149,7 +149,7 @@ export default function TestnetHelpPage() {
               <div>
                 <h3 className="font-semibold mb-2">Pool Not Initialized</h3>
                 <p className="text-sm text-muted-foreground">
-                  If you see "Pool has not been initialized yet", the pool may not exist yet.
+                  If you see &quot;Pool has not been initialized yet&quot;, the pool may not exist yet.
                   This is normal for new testnet deployments. The pool will be created automatically
                   when the first mint operation occurs.
                 </p>
@@ -157,7 +157,7 @@ export default function TestnetHelpPage() {
               <div>
                 <h3 className="font-semibold mb-2">Missing Pool Data</h3>
                 <p className="text-sm text-muted-foreground">
-                  If pool information doesn't appear, check that the backend is running and
+                  If pool information doesn&apos;t appear, check that the backend is running and
                   the pool endpoint is accessible. The frontend will gracefully handle missing pool data.
                 </p>
               </div>
