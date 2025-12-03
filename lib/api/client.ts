@@ -54,12 +54,6 @@ class ApiClient {
       // Try JWT token first (from backend signin)
       let token = localStorage.getItem('auth_token');
       
-      // Fallback to Pi access token if JWT not available
-      // This allows API calls to work even if backend signin hasn't completed yet
-      if (!token) {
-        token = localStorage.getItem('pi_access_token');
-      }
-      
       if (token) {
         defaultHeaders['Authorization'] = `Bearer ${token}`;
       }
@@ -177,6 +171,12 @@ class ApiClient {
     });
   }
 
+  async getCurrentUser() {
+    return this.request('/auth/me', {
+      method: 'GET',
+    });
+  }
+
 
   // Balance Check Methods 
   async checkBalance(address: string) {
@@ -268,9 +268,12 @@ class ApiClient {
     return this.request('/wallet/info');
   }
 
-  async getTransactionHistory(limit?: number) {
-    const params = limit ? `?limit=${limit}` : '';
-    return this.request(`/stablecoin/history${params}`);
+  async getTransactionHistory(limit?: number, walletAddress?: string) {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    if (walletAddress) params.append('walletAddress', walletAddress);
+    const queryString = params.toString();
+    return this.request(`/stablecoin/history${queryString ? `?${queryString}` : ''}`);
   }
 
   // Volatility & Position Health Methods
@@ -329,6 +332,7 @@ class ApiClient {
   async getRiskSignals() {
     return this.request('/stablecoin/risk-signals');
   }
+
 }
 
 export const apiClient = new ApiClient();

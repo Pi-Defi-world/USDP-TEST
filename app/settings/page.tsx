@@ -143,13 +143,13 @@ export default function SettingsPage() {
   }, []);
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Settings</h1>
-        <p className="text-muted-foreground">Manage your account settings and security</p>
+    <div className="container mx-auto py-4 sm:py-8 px-4 max-w-4xl">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-2">Settings</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Manage your account settings and security</p>
       </div>
 
-      <Card>
+      <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
         <CardHeader>
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
@@ -244,9 +244,9 @@ export default function SettingsPage() {
 
       {/* Testnet Configuration Section */}
       {isTestnet && (
-        <Card className="mt-6">
+        <Card className="mt-4 sm:mt-6 border-border/50 bg-card/50 backdrop-blur-sm">
           <CardHeader>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <Network className="h-5 w-5" />
               <CardTitle>Testnet Configuration</CardTitle>
               <TestnetBadge />
@@ -256,7 +256,7 @@ export default function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label className="text-sm font-medium">Network</Label>
                 <p className="text-sm text-muted-foreground mt-1">Pi Testnet</p>

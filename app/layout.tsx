@@ -23,13 +23,18 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} pb-20 lg:pb-0`}>
-      <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
-      <Script id="pi-init" strategy="beforeInteractive">
+    <html lang="en" className="dark">
+      <body className={`${inter.className} pt-14 pb-20 lg:pb-0 lg:pt-16`}>
+      <Script 
+        src="https://sdk.minepi.com/pi-sdk.js" 
+        strategy="lazyOnload"
+      />
+      <Script id="pi-init" strategy="lazyOnload">
         {`
-          const Pi = window.Pi;
-          Pi.init({ version: "2.0",  sandbox: false});
+          if (typeof window !== 'undefined' && window.Pi) {
+            const Pi = window.Pi;
+            Pi.init({ version: "2.0", sandbox: true });
+          }
         `}
       </Script>
         <PiProvider>

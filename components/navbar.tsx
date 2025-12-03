@@ -1,11 +1,21 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Wallet, Home, Coins, Droplets, User, ArrowRightLeft } from "lucide-react"
+import { Home, TrendingUp, User, LogOut, Wallet, Coins, ArrowDownCircle, FileText } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePi } from "@/components/providers/pi-provider"
 import { useState, useEffect } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
 
 // Mobile Bottom Navigation Component
 function MobileBottomNav() {
@@ -34,16 +44,19 @@ function MobileBottomNav() {
   const navItems = [
     { href: "/", icon: Home, label: "Home" },
     { href: "/mint", icon: Coins, label: "Mint" },
-    { href: "/swap", icon: ArrowRightLeft, label: "Swap"},
-    { href: "/liquidity", icon: Droplets, label: "Liquidity" },
-    { href: "/profile", icon: User, label: "Profile" },
+    { href: "/stats", icon: TrendingUp, label: "Stats" },
+    { href: "/redeem", icon: ArrowDownCircle, label: "Redeem" },
+    { href: "/transactions", icon: FileText, label: "Transaction" },
   ]
 
   return (
     <div 
-      className={`fixed bottom-0 left-0 right-0 z-50 lg:hidden transition-transform duration-300 ease-in-out ${
+      className={cn(
+        "fixed bottom-0 left-0 right-0 z-50 lg:hidden transition-transform duration-300 ease-in-out",
         isVisible ? 'translate-y-0' : 'translate-y-full'
-      }`}
+      )}
+      // Safe area insets require inline styles for proper mobile support
+      // eslint-disable-next-line react/forbid-dom-props
       style={{
         paddingBottom: 'env(safe-area-inset-bottom, 1rem)',
         paddingLeft: 'env(safe-area-inset-left, 1rem)',
@@ -51,7 +64,7 @@ function MobileBottomNav() {
       }}
     >
       <div className="relative max-w-sm mx-auto">
-        <div className="bg-card/80 backdrop-blur-md border border-border rounded-xl shadow-lg px-3 py-1.5">
+        <div className="bg-[#000000]/95 backdrop-blur-md border border-[#1C1F25] rounded-t-2xl shadow-2xl px-3 py-2">
           <div className="flex justify-around items-center">
             {navItems.map((item) => {
               const isActive = pathname === item.href || (pathname && item.href !== "/" && pathname?.startsWith(item.href))
@@ -59,12 +72,15 @@ function MobileBottomNav() {
                 <Link 
                   key={item.href}
                   href={item.href} 
-                  className={`flex flex-col items-center justify-center transition-colors p-1.5 ${
-                    isActive ? 'text-primary' : 'text-neutral-400 hover:text-primary'
-                  }`}
+                  className={cn(
+                    "flex flex-col items-center justify-center transition-all p-2 rounded-lg min-w-[60px]",
+                    isActive 
+                      ? 'text-gradient-blue bg-primary/10' 
+                      : 'text-muted-foreground hover:text-primary hover:bg-primary/5'
+                  )}
                 >
-                  <item.icon className="h-5 w-5" />
-                  <span className="text-[10px] mt-0.5">{item.label}</span>
+                  <item.icon className={cn("h-5 w-5", isActive ? "text-primary" : "")} />
+                  <span className={cn("text-[10px] mt-1 font-medium", isActive && "text-gradient-blue")}>{item.label}</span>
                 </Link>
               )
             })}
@@ -77,6 +93,8 @@ function MobileBottomNav() {
 
 export function Navbar() {
   const { user, isAuthenticated, authenticate, signOut } = usePi()
+  const pathname = usePathname()
+  const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const [authLoading, setAuthLoading] = useState(false)
 
@@ -106,63 +124,132 @@ export function Navbar() {
     }
   }
 
+  const handleLogout = () => {
+    signOut()
+    router.push('/')
+  }
+
+  const navItems = [
+    { href: "/", label: "Home" },
+    { href: "/mint", label: "Mint" },
+    { href: "/stats", label: "Stats" },
+    { href: "/redeem", label: "Redeem" },
+    { href: "/transactions", label: "Transaction" },
+  ]
+
+  // User Menu / Auth Button Component (reusable)
+  const UserMenuButton = () => (
+    <div className="flex items-center gap-3">
+      {!mounted ? (
+        <Button variant="outline" className="gap-2 bg-transparent" disabled>
+          <Wallet className="h-4 w-4" />
+          <span className="text-sm hidden sm:inline">Loading...</span>
+        </Button>
+      ) : isAuthenticated ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2 bg-transparent">
+              <User className="h-4 w-4" />
+              <span className="text-sm max-w-[120px] truncate hidden sm:inline">
+                {user?.username || 'User'}
+              </span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
+                <User className="h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer">
+                <Wallet className="h-4 w-4" />
+                <span>Dashboard</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
+              <LogOut className="h-4 w-4 mr-2" />
+              <span>Logout</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <Button 
+          onClick={handlePiAuth} 
+          disabled={authLoading}
+          size="sm" 
+          className="gap-2 bg-gradient-blue hover:opacity-90 text-white"
+        >
+          <Wallet className="h-4 w-4" />
+          <span className="text-sm hidden sm:inline">
+            {authLoading ? 'Connecting...' : 'Connect Pi'}
+          </span>
+        </Button>
+      )}
+    </div>
+  )
+
+  // Logo Component (reusable)
+  const Logo = () => (
+    <Link href="/" className="flex items-center gap-3">
+      <div className="relative w-8 h-8">
+        <Image 
+          src="/usdp-logo.png" 
+          alt="USDP Logo" 
+          fill
+          className="object-contain"
+        />
+      </div>
+      <span className="font-bold text-xl text-gradient-blue">USDP</span>
+    </Link>
+  )
+
   return (
     <>
-      <nav className="fixed top-0 w-full z-50 border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="font-bold text-xl">BINGEPi</span>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
-            <Link href="/" className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors">Home</Link>
-            <Link href="/swap" className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors">Swap</Link>
-            <Link href="/mint" className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors">Mint</Link>
-            <Link href="/liquidity" className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors">Liquidity</Link>
-            <Link href="/profile" className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors">Profile</Link>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {!mounted ? (
-              <Button variant="outline" className="gap-2 bg-transparent">
-                <Wallet className="h-4 w-4" />
-                <span className="text-xs sm:text-sm">Loading...</span>
-              </Button>
-            ) : isAuthenticated ? (
-              <div className="flex items-center gap-2">
-                <Button variant="outline" className="gap-2 bg-transparent">
-                  <Wallet className="h-4 w-4" />
-                  <span className="text-xs sm:text-sm max-w-[120px] truncate">
-                    {user?.username || 'Connected'}
-                  </span>
-                </Button>
-                <Button 
-                  onClick={signOut}
-                  variant="ghost" 
-                  size="sm"
-                  className="text-xs px-2"
-                >
-                  <span className="hidden sm:inline">Logout</span>
-                  <span className="sm:hidden">×</span>
-                </Button>
-              </div>
-            ) : (
-              <Button 
-                onClick={handlePiAuth} 
-                disabled={authLoading}
-                size="sm" 
-                className="gap-2 btn-gradient-primary"
-              >
-                <Wallet className="h-4 w-4" />
-                <span className="text-xs sm:text-sm">
-                  {authLoading ? 'Connecting...' : 'Connect Pi'}
-                </span>
-              </Button>
-            )}
-          </div>
+      {/* Mobile Top Bar */}
+      <nav className="lg:hidden fixed top-0 left-0 right-0 z-50 border-b border-[#1C1F25] bg-[#000000]/95 backdrop-blur-sm">
+        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+          <Logo />
+          <UserMenuButton />
         </div>
       </nav>
+
+      {/* Desktop Top Navigation */}
+      <nav className="hidden lg:block fixed top-0 w-full z-50 border-b border-[#1C1F25] bg-[#000000]/95 backdrop-blur-sm">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <Logo />
+
+          {/* Desktop Navigation Links */}
+          <div className="flex items-center space-x-1">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || (pathname && item.href !== "/" && pathname?.startsWith(item.href))
+              return (
+                <Link 
+                  key={item.href}
+                  href={item.href} 
+                  className={cn(
+                    "px-4 py-2 text-sm font-medium transition-colors rounded-lg",
+                    isActive 
+                      ? "text-gradient-blue bg-primary/10" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              )
+            })}
+          </div>
+
+          {/* User Menu / Auth Button */}
+          <UserMenuButton />
+        </div>
+      </nav>
+
+      {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
     </>
   )

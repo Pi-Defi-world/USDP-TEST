@@ -18,12 +18,16 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchHistory = async () => {
-    if (!walletAddress) return;
+    if (!walletAddress) {
+      setError('Wallet address is required to fetch transaction history');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
       setError(null);
-      const response = await apiClient.getTransactionHistory(50);
+      const response = await apiClient.getTransactionHistory(50, walletAddress);
       
       if (response.success && response.data) {
         const data = response.data as { transactions: TransactionHistoryItem[]; count: number };

@@ -2,120 +2,159 @@
 @tailwind components;
 @tailwind utilities;
 
-
-
 @layer base {
   :root {
+    /* Premium Dark Theme Colors */
+    --background: 0 0 0; /* #000000 */
+    --foreground: 233 236 239; /* #E9ECEF */
 
-    --background: 0 0% 100%;
+    --card: 17 19 24; /* #111318 */
+    --card-foreground: 233 236 239;
 
-    --foreground: 222.2 84% 4.9%;
+    --popover: 17 19 24;
+    --popover-foreground: 233 236 239;
 
-    --card: 0 0% 100%;
+    --primary: 59 130 246; /* Electric blue start */
+    --primary-foreground: 0 0 0; /* #000000 */
 
-    --card-foreground: 222.2 84% 4.9%;
+    --secondary: 28 31 37; /* #1C1F25 */
+    --secondary-foreground: 233 236 239;
 
-    --popover: 0 0% 100%;
+    --muted: 22 25 31; /* #16191F */
+    --muted-foreground: 112 119 132; /* #707784 */
 
-    --popover-foreground: 222.2 84% 4.9%;
+    --accent: 59 130 246;
+    --accent-foreground: 11 13 18;
 
-    --primary: 222.2 47.4% 11.2%;
+    --destructive: 239 68 68;
+    --destructive-foreground: 233 236 239;
 
-    --primary-foreground: 210 40% 98%;
+    --border: 28 31 37; /* #1C1F25 */
+    --input: 28 31 37;
+    --ring: 59 130 246;
 
-    --secondary: 210 40% 96.1%;
-
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-
-    --input: 214.3 31.8% 91.4%;
-
-    --ring: 222.2 84% 4.9%;
-
-    --chart-1: 12 76% 61%;
-
-    --chart-2: 173 58% 39%;
-
-    --chart-3: 197 37% 24%;
-
-    --chart-4: 43 74% 66%;
-
-    --chart-5: 27 87% 67%;
-
-    --radius: 0.5rem
-  }
-  .dark {
-
-    --background: 222.2 84% 4.9%;
-
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-
-    --input: 217.2 32.6% 17.5%;
-
-    --ring: 212.7 26.8% 83.9%;
-
-    --chart-1: 220 70% 50%;
-
-    --chart-2: 160 60% 45%;
-
-    --chart-3: 30 80% 55%;
-
-    --chart-4: 280 65% 60%;
-
-    --chart-5: 340 75% 55%
+    --radius: 0.75rem;
   }
 }
-
-
 
 @layer base {
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[#000000] text-[#E9ECEF];
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  /* Electric Blue Gradient */
+  .bg-gradient-blue {
+    background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+  }
+  
+  .text-gradient-blue {
+    background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .border-gradient-blue {
+    border: 1px solid transparent;
+    background-image: linear-gradient(#000000, #000000), linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+
+  /* Glow Effects */
+  .glow-blue {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(59, 130, 246, 0.1);
+  }
+
+  .glow-blue-hover:hover {
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.4), 0 0 50px rgba(59, 130, 246, 0.15);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .glow-ring {
+    position: relative;
+  }
+
+  .glow-ring::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+    opacity: 0.3;
+    filter: blur(8px);
+    z-index: -1;
+  }
+
+  /* Premium Panel Background */
+  .bg-panel {
+    background-color: #111318;
+  }
+
+  .bg-panel-light {
+    background-color: #16191F;
+  }
+
+  /* Skeleton Loader with Blue Gradient */
+  .skeleton-gradient {
+    background: linear-gradient(
+      90deg,
+      #000000 0%,
+      #1C1F25 50%,
+      #000000 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Button Press Animation */
+  .btn-press:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+
+  /* Smooth Page Transitions */
+  .page-transition {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Micro Animations */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
   }
 }

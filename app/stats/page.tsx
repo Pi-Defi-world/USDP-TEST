@@ -126,17 +126,17 @@ export default function StatsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
-        <div className="container mx-auto py-8">
+      <div className="min-h-screen bg-background p-4">
+        <div className="container mx-auto py-4 sm:py-8">
           <div className="space-y-6">
             <div className="text-center space-y-2">
-              <Skeleton className="h-8 w-64 mx-auto" />
-              <Skeleton className="h-4 w-96 mx-auto" />
+              <Skeleton className="h-8 w-48 sm:w-64 mx-auto" />
+              <Skeleton className="h-4 w-64 sm:w-96 mx-auto" />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {Array.from({ length: 8 }).map((_, i) => (
-                <Card key={i} className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+                <Card key={i} className="border-border/50 bg-card/50 backdrop-blur-sm">
                   <CardHeader className="space-y-0 pb-2">
                     <Skeleton className="h-4 w-24" />
                   </CardHeader>
@@ -154,37 +154,37 @@ export default function StatsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
-      <div className="container mx-auto py-8">
+    <div className="min-h-screen bg-background p-4">
+      <div className="container mx-auto py-4 sm:py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-2">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground">
               USDP Statistics
             </h1>
             {isTestnet && <TestnetBadge />}
           </div>
-          <p className="text-slate-600 dark:text-slate-300">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Real-time data from the USDP stablecoin system
           </p>
         </div>
 
         {/* Reserve Status */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-xs sm:text-sm font-medium">
                 {isTestnet && collateralBreakdown ? 'Total Pi (Reserve + Pool)' : 'Pi Reserve'}
               </CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl sm:text-2xl font-bold">
                 {isTestnet && collateralBreakdown 
                   ? `${collateralBreakdown.total.piAmount} Pi`
                   : `${stats.totalPiReserve} Pi`}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 ${isTestnet && collateralBreakdown 
                   ? collateralBreakdown.total.totalValue
                   : stats.totalUsdReserve} USD
@@ -197,40 +197,40 @@ export default function StatsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">USDP Supply</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">USDP Supply</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUSDPSupply} USDP</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-xl sm:text-2xl font-bold">{stats.totalUSDPSupply} USDP</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 ${stats.totalUSDPUsdValue} USD
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Backing Ratio</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Backing Ratio</CardTitle>
               <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.backingRatio}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-xl sm:text-2xl font-bold">{stats.backingRatio}</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 {stats.isFullyBacked ? 'Fully Backed' : 'Under-collateralized'}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pi Price</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Pi Price</CardTitle>
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${stats.piPrice.toFixed(6)}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-xl sm:text-2xl font-bold">${stats.piPrice.toFixed(6)}</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 Real-time price
               </p>
             </CardContent>
@@ -238,54 +238,54 @@ export default function StatsPage() {
         </div>
 
         {/* Business Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Volume</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Volume</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${stats.totalVolume}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-xl sm:text-2xl font-bold">${stats.totalVolume}</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 USD traded
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Fees Collected</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Fees Collected</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalFeesCollected} USDP</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-xl sm:text-2xl font-bold">{stats.totalFeesCollected} USDP</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 Protocol revenue
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Total Transactions</CardTitle>
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalTransactions}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-xl sm:text-2xl font-bold">{stats.totalTransactions}</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 All operations
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Holders</CardTitle>
+              <CardTitle className="text-xs sm:text-sm font-medium">Active Holders</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalHolders}</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-xl sm:text-2xl font-bold">{stats.totalHolders}</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 Unique addresses
               </p>
             </CardContent>
@@ -293,8 +293,8 @@ export default function StatsPage() {
         </div>
 
         {/* Transaction Breakdown */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle>Transaction Breakdown</CardTitle>
               <CardDescription>
@@ -319,7 +319,7 @@ export default function StatsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+          <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle>System Status</CardTitle>
               <CardDescription>
@@ -335,7 +335,7 @@ export default function StatsPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Reserve Surplus</span>
-                <span className="text-sm font-bold text-green-600">
+                <span className="text-sm font-bold text-primary">
                   ${stats.reserveSurplus}
                 </span>
               </div>
@@ -349,7 +349,7 @@ export default function StatsPage() {
               {isTestnet && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Collateral Asset</span>
-                  <span className="text-sm font-bold text-yellow-600 dark:text-yellow-400">
+                  <span className="text-sm font-bold text-primary">
                     {assetLabel}
                   </span>
                 </div>

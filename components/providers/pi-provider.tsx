@@ -37,7 +37,7 @@ export function PiProvider({ children }: { children: ReactNode }) {
         try {
           window.Pi.init({ 
             version: "2.0", 
-            sandbox: false
+            sandbox: true
           })
           console.log("✅ Pi SDK initialized")
         } catch (error) {
