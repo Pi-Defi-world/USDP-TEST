@@ -36,7 +36,7 @@ interface AuthState {
   verifyPassphrase: (username: string, passphrase: string) => Promise<{ success: boolean; data?: { walletAddress: string }; error?: string }>;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => {
+export const useAuthStore = create<AuthState>((set) => {
   // Initialize with empty state - we'll restore from backend asynchronously
   let isInitialized = false;
   
@@ -57,8 +57,8 @@ export const useAuthStore = create<AuthState>((set, get) => {
       set({ isLoading: true });
       const response = await apiClient.getCurrentUser();
       
-      if (response.success && response.data?.user) {
-        const user = response.data.user;
+      if (response.success && (response.data as AuthResponseData)?.user) {
+        const user = (response.data as AuthResponseData).user!;
         // Store user in localStorage as backup
         localStorage.setItem('auth_user', JSON.stringify(user));
         set({ 

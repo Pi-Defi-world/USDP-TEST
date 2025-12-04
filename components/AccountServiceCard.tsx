@@ -197,7 +197,7 @@ export function AccountServiceCard({ onWalletImported }: AccountServiceCardProps
         description: 'Wallet address copied to clipboard',
       });
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
+    } catch {
       toast({
         title: 'Failed to copy',
         description: 'Please try again',

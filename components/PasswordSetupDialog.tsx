@@ -66,8 +66,8 @@ export function PasswordSetupDialog({
 
       // Parent will close the dialog after successful storage
       // Don't set isSubmitting to false here - let parent handle it
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Failed to set up password. Please try again.';
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to set up password. Please try again.';
       setError(errorMessage);
       setIsSubmitting(false); // Only set to false on error, parent handles success
       console.error('Password setup error:', err);
@@ -94,8 +94,8 @@ export function PasswordSetupDialog({
             Set Up PIN/Password
           </DialogTitle>
           <DialogDescription className="text-[#707784]">
-            Create a PIN/password to secure your account. You'll need this to sign transactions.
-            Make sure to remember it, as you'll need to re-import your account if you forget it.
+            Create a PIN/password to secure your account. You&apos;ll need this to sign transactions.
+            Make sure to remember it, as you&apos;ll need to re-import your account if you forget it.
           </DialogDescription>
         </DialogHeader>
 

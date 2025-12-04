@@ -51,7 +51,7 @@ export default function HomePage() {
       </section>
 
       {/* Key Features - Three Column */}
-      <section className="py-16 lg:py-24 bg-[#000000]">
+      {/* <section className="py-16 lg:py-24 bg-[#000000]">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <Card className="bg-panel border-[#1C1F25] hover:border-gradient-blue transition-all">
@@ -139,7 +139,7 @@ export default function HomePage() {
             </Card>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Use Cases Section */}
       <section className="py-16 lg:py-24 bg-[#000000]">

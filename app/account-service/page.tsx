@@ -183,7 +183,7 @@ export default function AccountServicePage() {
         description: `${type === 'address' ? 'Wallet address' : 'Secret seed'} copied to clipboard`,
       });
       setTimeout(() => setCopied(null), 2000);
-    } catch (err) {
+    } catch {
       toast({
         title: 'Failed to copy',
         description: 'Please try again',
@@ -228,7 +228,7 @@ export default function AccountServicePage() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-[#707784]">
                       This service converts your 24-word passphrase into a wallet address and secret seed. 
-                      After derivation, you'll set a PIN/password to encrypt and store your wallet securely.
+                      After derivation, you&apos;ll set a PIN/password to encrypt and store your wallet securely.
                     </AlertDescription>
                   </Alert>
 
@@ -542,7 +542,7 @@ export default function AccountServicePage() {
               <div className="space-y-3 text-sm text-[#707784]">
                 <p>
                   Our account service is available 24/7 for automated operations. For support inquiries, 
-                  please use the contact form and we'll respond within 24-48 hours.
+                  please use the contact form and we&apos;ll respond within 24-48 hours.
                 </p>
                 <p>
                   All transactions are processed on the Pi Network blockchain and are subject to network 

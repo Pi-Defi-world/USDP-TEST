@@ -412,7 +412,7 @@ export default function MintPage() {
                 {amount && piAmount > 0 && (
                   <div className="p-4 bg-panel-light rounded-lg border border-[#1C1F25] space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-[#707784]">You'll receive:</span>
+                      <span className="text-sm text-[#707784]">You&apos;ll receive:</span>
                       <span className="text-xl font-bold text-gradient-blue">{usdpOutput.toFixed(7)} USDP</span>
                     </div>
                     <div className="pt-3 border-t border-[#1C1F25]">

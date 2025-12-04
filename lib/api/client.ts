@@ -52,7 +52,7 @@ class ApiClient {
       defaultHeaders['Origin'] = window.location.origin;
       
       // Try JWT token first (from backend signin)
-      let token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('auth_token');
       
       if (token) {
         defaultHeaders['Authorization'] = `Bearer ${token}`;
