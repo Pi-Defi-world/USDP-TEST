@@ -38,7 +38,16 @@ export default function TransactionsPage() {
       }
     } catch (err) {
       console.error('Error fetching transaction history:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch transaction history');
+      let errorMessage = err instanceof Error ? err.message : 'Failed to fetch transaction history';
+      
+      // Check for connection errors
+      if (errorMessage.includes('Cannot connect to backend') || 
+          errorMessage.includes('Failed to fetch') ||
+          errorMessage.includes('ERR_CONNECTION')) {
+        errorMessage = 'Backend server is not running. Please start the backend server on port 3001.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

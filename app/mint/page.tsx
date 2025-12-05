@@ -49,6 +49,7 @@ export default function MintPage() {
   const usdpOutput = usdValue - mintFee;
   const piRequired = piAmount * OVERCOLLATERALIZATION_RATIO;
   const overcollateralizationAmount = piRequired - piAmount;
+  // Calculate peg rate: 1 USDP = X Pi (since 1 USDP = 1 USD, and 1 USD = 1/piPrice Pi)
   const pegRate = piPrice ? (1 / piPrice).toFixed(6) : '0.000000';
 
   const piBalance = parseFloat(balance?.pi?.amount || '0');
@@ -122,7 +123,15 @@ export default function MintPage() {
       setAmount('');
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Mint transaction failed';
+      let errorMessage = err instanceof Error ? err.message : 'Mint transaction failed';
+      
+      // Check for connection errors
+      if (errorMessage.includes('Cannot connect to backend') || 
+          errorMessage.includes('Failed to fetch') ||
+          errorMessage.includes('ERR_CONNECTION')) {
+        errorMessage = 'Backend server is not running. Please start the backend server on port 3001.';
+      }
+      
       if (errorMessage.includes('PASSWORD_REQUIRED') || errorMessage.includes('Failed to decrypt')) {
         setPasswordError(errorMessage);
         throw err; // Re-throw to keep dialog open
@@ -151,15 +160,21 @@ export default function MintPage() {
       <div className="min-h-screen bg-[#000000] flex items-center justify-center p-4 page-transition">
         <Card className="bg-panel border-[#1C1F25] max-w-md w-full">
           <CardHeader>
-            <CardTitle className="text-[#E9ECEF]">Connect Your Wallet</CardTitle>
+            <CardTitle className="text-[#E9ECEF]">Wallet Required</CardTitle>
             <CardDescription className="text-[#707784]">
-              Please connect your Pi Network wallet to mint USDP
+              Please import your wallet to view transactions
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-[#707784] text-center">
-              Use the &quot;Connect Pi&quot; button in the navigation bar to get started.
+            <p className="text-sm text-[#707784] text-center mb-4">
+              You need to import your wallet using the Account Service in your profile to view transaction history.
             </p>
+            <Button
+              onClick={() => window.location.href = '/profile'}
+              className="w-full bg-gradient-blue glow-blue-hover btn-press"
+            >
+              Go to Profile
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -418,7 +433,7 @@ export default function MintPage() {
                     <div className="pt-3 border-t border-[#1C1F25]">
                       <div className="flex items-center justify-between text-xs text-[#707784]">
                         <span>Live peg rate:</span>
-                        <span className="text-gradient-blue font-semibold">1 Pi = {pegRate} USDP</span>
+                        <span className="text-gradient-blue font-semibold">1 USDP = {pegRate} Pi</span>
                       </div>
                     </div>
                   </div>

@@ -37,6 +37,52 @@ class ApiClient {
     return newSessionId;
   }
 
+  // Helper to check if JWT token is expired
+  private isJWTExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const exp = payload.exp * 1000; // Convert to milliseconds
+      return Date.now() >= exp;
+    } catch {
+      return true; // If we can't parse it, consider it expired
+    }
+  }
+
+  // Helper to refresh JWT token using Pi access token
+  private async refreshJWTToken(): Promise<string | null> {
+    if (typeof window === 'undefined') return null;
+
+    const piAccessToken = localStorage.getItem('pi_access_token');
+    const piUser = localStorage.getItem('pi_user');
+
+    if (!piAccessToken || !piUser) {
+      return null;
+    }
+
+    try {
+      const userData = JSON.parse(piUser);
+      
+      // Use the signIn method which handles URL construction correctly
+      const response = await this.signIn({
+        accessToken: piAccessToken,
+        user: {
+          uid: userData.uid,
+          username: userData.username || '',
+          wallet_address: userData.wallet_address
+        }
+      });
+
+      if (response.success && response.data?.token) {
+        localStorage.setItem('auth_token', response.data.token);
+        return response.data.token;
+      }
+    } catch (error) {
+      console.error('Failed to refresh JWT token:', error);
+    }
+
+    return null;
+  }
+
   private async request(
     endpoint: string,
     options: RequestInit = {}
@@ -51,11 +97,32 @@ class ApiClient {
     if (typeof window !== 'undefined') {
       defaultHeaders['Origin'] = window.location.origin;
       
-      // Try JWT token first (from backend signin)
-      const token = localStorage.getItem('auth_token');
+      // Try JWT token first (from backend signin) - required in production
+      let token = localStorage.getItem('auth_token');
+      
+      // Check if JWT token is expired and refresh if needed
+      if (token && this.isJWTExpired(token)) {
+        console.log('JWT token expired, refreshing...');
+        token = await this.refreshJWTToken();
+      }
+      
+      // Fallback to Pi access token only in development/sandbox mode
+      // In production, JWT tokens are required for security
+      const isDevelopment = process.env.NODE_ENV === 'development' || 
+                           window.location.hostname === 'localhost' ||
+                           window.location.hostname.includes('testnet');
+      
+      if (!token && isDevelopment) {
+        token = localStorage.getItem('pi_access_token');
+        if (token) {
+          console.warn('Using Pi access token instead of JWT (development mode only)');
+        }
+      }
       
       if (token) {
         defaultHeaders['Authorization'] = `Bearer ${token}`;
+      } else if (!isDevelopment) {
+        console.error('No authentication token available. JWT token required in production.');
       }
     }
 
@@ -67,28 +134,74 @@ class ApiClient {
       },
     };
 
-    try {
-      const response = await fetch(url, config);
-      const data = await response.json();
+    // Retry logic for connection resilience
+    let lastError: Error | null = null;
+    const maxRetries = 3;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(url, config);
+        
+        // Handle connection errors (no response received)
+        if (!response) {
+          throw new Error('Backend server is not responding. Please ensure the backend server is running on port 3001.');
+        }
+        
+        const data = await response.json();
 
-      if (!response.ok) {
-        // For 404 errors, include the status code in the error message for easier detection
-        const errorMessage = data.error || `HTTP ${response.status}`;
-        const error = new Error(errorMessage) as Error & { status?: number };
-        // Add status code to error for easier checking
-        error.status = response.status;
-        throw error;
-      }
+        if (!response.ok) {
+          // For 404 errors, include the status code in the error message for easier detection
+          const errorMessage = data.error || `HTTP ${response.status}`;
+          const error = new Error(errorMessage) as Error & { status?: number };
+          // Add status code to error for easier checking
+          error.status = response.status;
+          throw error;
+        }
 
-      return data;
-    } catch (error) {
-      // Only log non-404 errors to avoid cluttering console
-      const errorWithStatus = error as Error & { status?: number };
-      if (!(error instanceof Error && errorWithStatus.status === 404)) {
-        console.error(`API request failed: ${endpoint}`, error);
+        return data;
+      } catch (error) {
+        lastError = error as Error;
+        
+        // Only retry on network/connection errors, not on HTTP errors
+        const isNetworkError = 
+          error instanceof TypeError && 
+          (error.message.includes('fetch') || 
+           error.message.includes('Failed to fetch') ||
+           error.message.includes('network') ||
+           error.message.includes('ERR_CONNECTION_REFUSED') ||
+           error.message.includes('ERR_CONNECTION_RESET'));
+        
+        // Don't retry on HTTP errors (4xx, 5xx) or if we've exhausted retries
+        const isHttpError = error instanceof Error && 'status' in error && (error as any).status >= 400;
+        
+        if (!isNetworkError || isHttpError || attempt === maxRetries) {
+          // Handle network errors (connection refused, reset, etc.)
+          if (isNetworkError && !isHttpError) {
+            const connectionError = new Error(
+              'Cannot connect to backend server. Please ensure the backend server is running on http://localhost:3001'
+            ) as Error & { status?: number; isConnectionError?: boolean };
+            connectionError.status = 0;
+            connectionError.isConnectionError = true;
+            console.error(`Backend connection failed: ${endpoint}. Is the server running?`);
+            throw connectionError;
+          }
+          
+          // Only log non-404 errors to avoid cluttering console
+          const errorWithStatus = error as Error & { status?: number };
+          if (!(error instanceof Error && errorWithStatus.status === 404)) {
+            console.error(`API request failed: ${endpoint}`, error);
+          }
+          throw error;
+        }
+        
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = 1000 * Math.pow(2, attempt);
+        console.log(`Retrying request to ${endpoint} (attempt ${attempt + 1}/${maxRetries + 1}) after ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
-      throw error;
     }
+    
+    throw lastError || new Error('Request failed after retries');
   }
 
   // Authentication methods
@@ -120,7 +233,7 @@ class ApiClient {
   // Pi Authentication
   async signIn(authResult: {
     accessToken: string;
-    user: { uid: string; username: string };
+    user: { uid: string; username: string; wallet_address?: string };
   }) {
     return this.request('/auth/signin', {
       method: 'POST',
@@ -172,6 +285,25 @@ class ApiClient {
   }
 
   async getCurrentUser() {
+    // If using Pi access token (no JWT), include walletAddress from localStorage if available
+    const authToken = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const piUser = typeof window !== 'undefined' ? localStorage.getItem('pi_user') : null;
+    
+    // If no JWT token but we have Pi user data, include walletAddress in request body
+    if (!authToken && piUser) {
+      try {
+        const userData = JSON.parse(piUser);
+        if (userData.wallet_address) {
+          return this.request('/auth/me', {
+            method: 'POST', // Use POST to send body
+            body: JSON.stringify({ walletAddress: userData.wallet_address }),
+          });
+        }
+      } catch (error) {
+        // Fall through to regular GET request
+      }
+    }
+    
     return this.request('/auth/me', {
       method: 'GET',
     });
@@ -218,6 +350,11 @@ class ApiClient {
   // Get liquidity pool information
   async getPoolInfo() {
     return this.request('/health/pool');
+  }
+
+  // Get comprehensive wallet and pool status (reserve + pool combined)
+  async getWalletStatus() {
+    return this.request('/health/wallet');
   }
 
   // Check if running on testnet

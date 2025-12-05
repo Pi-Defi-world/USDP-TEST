@@ -47,7 +47,61 @@ export const useAuthStore = create<AuthState>((set) => {
     }
     
     isInitialized = true;
-    const authToken = localStorage.getItem('auth_token');
+    
+    // Wait a bit for Pi provider to potentially refresh tokens
+    // This helps avoid race conditions where authStore initializes before Pi provider
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    let authToken = localStorage.getItem('auth_token');
+    const piAccessToken = localStorage.getItem('pi_access_token');
+    const piUser = localStorage.getItem('pi_user');
+    
+    // If no JWT token but we have Pi credentials, try to refresh
+    // Always re-authenticate if we have Pi access token (idempotent signin)
+    // This ensures fresh tokens and updates user data if needed
+    // Works for both production and development
+    if (piAccessToken && piUser) {
+      try {
+        console.log('Re-authenticating user on app load for fresh tokens...');
+        const userData = JSON.parse(piUser);
+        
+        // Use API client's signIn method which handles URL construction correctly
+        // This works for both production (Next.js proxy) and development (direct backend)
+        const signInResponse = await apiClient.signIn({
+          accessToken: piAccessToken,
+          user: {
+            uid: userData.uid,
+            username: userData.username || '',
+            wallet_address: userData.wallet_address || '' // Pi SDK sends empty string, but we keep it for compatibility
+          }
+        });
+
+        if (signInResponse.success && signInResponse.data) {
+          const authData = signInResponse.data as AuthResponseData;
+          if (authData.token) {
+            localStorage.setItem('auth_token', authData.token);
+            authToken = authData.token;
+          }
+          if (authData.user?.piUsername) {
+            userData.username = authData.user.piUsername;
+            localStorage.setItem('pi_user', JSON.stringify(userData));
+          }
+          console.log('✅ Re-authenticated successfully:', authData.user?.piUsername || userData.uid);
+        } else {
+          console.warn('Signin succeeded but no token returned');
+          return; // Can't proceed without token
+        }
+      } catch (error) {
+        console.error('Failed to re-authenticate on app load:', error);
+        // Don't clear tokens on connection errors - might be temporary
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || errorMessage.includes('Invalid token')) {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('auth_user');
+        }
+        return; // Can't proceed without token
+      }
+    }
     
     if (!authToken) {
       return; // No token, user is not authenticated
@@ -81,8 +135,13 @@ export const useAuthStore = create<AuthState>((set) => {
     } catch (error) {
       // Token is invalid or expired, or network error
       console.error('Error restoring user from backend:', error);
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
+      // Don't remove tokens immediately - might be a network issue
+      // Only remove if it's clearly an auth error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || errorMessage.includes('Invalid token')) {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
+      }
       set({ 
         user: null, 
         isAuthenticated: false, 

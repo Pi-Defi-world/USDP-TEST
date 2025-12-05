@@ -201,6 +201,7 @@ export function Navbar() {
           src="/usdp-logo.png" 
           alt="USDP Logo" 
           fill
+          sizes="32px"
           className="object-contain"
         />
       </div>

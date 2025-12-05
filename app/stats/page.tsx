@@ -21,6 +21,7 @@ export default function StatsPage() {
   const [collateralBreakdown, setCollateralBreakdown] = useState<CollateralBreakdown | null>(null);
   const [stats, setStats] = useState({
     totalPiReserve: '0.0000000',
+    totalUsdTestReserve: '0.0000000',
     totalUsdReserve: '0.00',
     totalUSDPSupply: '0.0000000',
     totalUSDPUsdValue: '0.00',
@@ -53,6 +54,7 @@ export default function StatsPage() {
           const statsData = statsResponse.data as Partial<Stats>;
           setStats({
             totalPiReserve: statsData.totalPiReserve || '0.0000000',
+            totalUsdTestReserve: statsData.totalUsdTestReserve || '0.0000000',
             totalUsdReserve: statsData.totalUsdReserve || '0.00',
             totalUSDPSupply: statsData.totalUSDPSupply || '0.0000000',
             totalUSDPUsdValue: statsData.totalUSDPUsdValue || '0.00',
@@ -69,49 +71,70 @@ export default function StatsPage() {
           });
         }
 
-        // Fetch testnet-specific data if in testnet mode
-        if (testnetMode) {
-          try {
-            const poolResponse = await apiClient.getPoolInfo();
-            if (poolResponse.success && poolResponse.data) {
-              setPoolInfo(poolResponse.data as PoolInfo);
+        // Fetch comprehensive wallet status (includes reserve + pool data)
+        // This endpoint provides all the data we need in one call
+        try {
+          const walletResponse = await apiClient.getWalletStatus();
+          if (walletResponse.success && walletResponse.data) {
+            const walletData = walletResponse.data as any;
+            
+            // Update total reserve value (includes reserve holdings + pool assets)
+            if (walletData.totals?.totalUsdValue) {
+              setStats(prev => ({
+                ...prev,
+                totalUsdReserve: walletData.totals.totalUsdValue,
+                totalPiReserve: walletData.totals.pi?.amount || prev.totalPiReserve,
+                totalUsdTestReserve: walletData.totals.usdTest?.amount || prev.totalUsdTestReserve,
+              }));
             }
-          } catch (error) {
-            console.error('Failed to fetch pool info:', error);
-          }
-
-          try {
-            const reserveResponse = await apiClient.getReserveStatus();
-            if (reserveResponse.success && reserveResponse.data) {
-              const status = reserveResponse.data as ReserveStatus;
+            
+            // Set collateral breakdown for testnet mode
+            if (testnetMode && walletData.reserve && walletData.pool && walletData.totals) {
+              setCollateralBreakdown({
+                reserve: {
+                  piAmount: walletData.reserve.balances?.pi?.amount || '0',
+                  usdTestAmount: walletData.reserve.balances?.usdTest?.amount || '0',
+                  piValue: walletData.reserve.balances?.pi?.usdValue || '0',
+                  usdTestValue: walletData.reserve.balances?.usdTest?.usdValue || '0',
+                },
+                pool: {
+                  piAmount: walletData.pool.reserves?.pi?.amount || '0',
+                  usdTestAmount: walletData.pool.reserves?.usdTest?.amount || '0',
+                  piValue: walletData.pool.reserves?.pi?.usdValue || '0',
+                  usdTestValue: walletData.pool.reserves?.usdTest?.usdValue || '0',
+                },
+                total: {
+                  piAmount: walletData.totals.pi?.amount || '0',
+                  usdTestAmount: walletData.totals.usdTest?.amount || '0',
+                  totalValue: walletData.totals.totalUsdValue || '0',
+                  usdcRatio: 0, // Will be calculated if needed
+                  piRatio: 0, // Will be calculated if needed
+                },
+              });
               
-              if (status.reserve && status.pool && status.total) {
-                setCollateralBreakdown({
-                  reserve: {
-                    piAmount: status.reserve.piBalance || '0',
-                    usdTestAmount: status.reserve.usdTestBalance || '0',
-                    piValue: status.reserve.piValue || '0',
-                    usdTestValue: status.reserve.usdTestValue || '0',
-                  },
-                  pool: {
-                    piAmount: status.pool.piAmount || '0',
-                    usdTestAmount: status.pool.usdTestAmount || '0',
-                    piValue: status.pool.piValue || '0',
-                    usdTestValue: status.pool.usdTestValue || '0',
-                  },
-                  total: {
-                    piAmount: status.total.piAmount || '0',
-                    usdTestAmount: status.total.usdTestAmount || '0',
-                    totalValue: status.total.totalValue || '0',
-                    usdcRatio: status.total.usdcRatio || 0,
-                    piRatio: status.total.piRatio || 0,
-                  },
+              // Set pool info if available
+              if (walletData.pool.exists) {
+                setPoolInfo({
+                  exists: true,
+                  poolId: walletData.pool.poolId || null,
+                  fee: walletData.pool.fee || null,
+                  totalShares: walletData.pool.totalShares || null,
+                  reserves: walletData.pool.reserves ? [
+                    {
+                      asset: 'native',
+                      amount: walletData.pool.reserves.pi?.amount || '0',
+                    },
+                    {
+                      asset: 'usd-test',
+                      amount: walletData.pool.reserves.usdTest?.amount || '0',
+                    },
+                  ] : [],
                 });
               }
             }
-          } catch (error) {
-            console.error('Failed to fetch reserve status:', error);
           }
+        } catch (error) {
+          console.error('Failed to fetch wallet status:', error);
         }
       } catch (error) {
         console.error('Failed to load stats:', error);
@@ -174,24 +197,24 @@ export default function StatsPage() {
           <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium">
-                {isTestnet && collateralBreakdown ? 'Total Pi (Reserve + Pool)' : 'Pi Reserve'}
+                Total Reserve
               </CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-xl sm:text-2xl font-bold">
-                {isTestnet && collateralBreakdown 
-                  ? `${collateralBreakdown.total.piAmount} Pi`
-                  : `${stats.totalPiReserve} Pi`}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
                 ${isTestnet && collateralBreakdown 
                   ? collateralBreakdown.total.totalValue
                   : stats.totalUsdReserve} USD
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {isTestnet && collateralBreakdown 
+                  ? `${collateralBreakdown.total.piAmount} Pi + ${collateralBreakdown.total.usdTestAmount} USD-TEST`
+                  : `${stats.totalPiReserve} Pi${stats.totalUsdTestReserve ? ` + ${stats.totalUsdTestReserve} USD-TEST` : ''}`}
               </p>
               {isTestnet && collateralBreakdown && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Reserve: {collateralBreakdown.reserve.piAmount} Pi | Pool: {collateralBreakdown.pool.piAmount} Pi
+                  Reserve: {collateralBreakdown.reserve.piAmount} Pi + {collateralBreakdown.reserve.usdTestAmount} USD-TEST | Pool: {collateralBreakdown.pool.piAmount} Pi + {collateralBreakdown.pool.usdTestAmount} USD-TEST
                 </p>
               )}
             </CardContent>
