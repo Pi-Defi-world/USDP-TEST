@@ -304,7 +304,6 @@ class ApiClient {
           });
         }
       } catch {
-        // Fall through to regular GET request
       }
     }
     

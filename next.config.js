@@ -66,6 +66,7 @@ const nextConfig = {
   },
   eslint: {
     // Don't fail build on warnings (warnings are still shown)
+    // Set to true to ignore ESLint errors during builds (only for warnings)
     ignoreDuringBuilds: false,
   },
   images: {
