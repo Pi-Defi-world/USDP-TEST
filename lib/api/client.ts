@@ -1,4 +1,4 @@
-import { ApiResponse } from '@/types';
+import { ApiResponse, AuthResponseData } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
@@ -72,9 +72,12 @@ class ApiClient {
         }
       });
 
-      if (response.success && response.data?.token) {
-        localStorage.setItem('auth_token', response.data.token);
-        return response.data.token;
+      if (response.success && response.data) {
+        const authData = response.data as AuthResponseData;
+        if (authData.token) {
+          localStorage.setItem('auth_token', authData.token);
+          return authData.token;
+        }
       }
     } catch (error) {
       console.error('Failed to refresh JWT token:', error);
