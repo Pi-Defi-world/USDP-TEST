@@ -206,6 +206,7 @@ export interface Balance {
 export interface Stats {
   totalPiReserve: string;
   totalUsdReserve: string;
+  totalUsdTestReserve?: string; // Testnet-specific: USD-TEST reserve amount
   totalUSDPSupply: string;
   totalUSDPUsdValue: string;
   // Legacy support
