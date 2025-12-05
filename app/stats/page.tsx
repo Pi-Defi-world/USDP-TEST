@@ -140,9 +140,9 @@ export default function StatsPage() {
               if (walletData.pool.exists) {
                 setPoolInfo({
                   exists: true,
-                  poolId: walletData.pool.poolId || null,
-                  fee: walletData.pool.fee || null,
-                  totalShares: walletData.pool.totalShares || null,
+                  poolId: walletData.pool.poolId ?? null,
+                  fee: walletData.pool.fee ?? null,
+                  totalShares: walletData.pool.totalShares ?? null,
                   reserves: walletData.pool.reserves ? [
                     {
                       asset: 'native',

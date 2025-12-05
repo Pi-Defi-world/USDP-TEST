@@ -434,9 +434,10 @@ export interface CollateralBreakdown {
 }
 
 export interface PoolInfo {
-  poolId: string;
+  poolId: string | null;
   exists: boolean;
-  totalShares: string;
+  totalShares: string | null;
+  fee?: string | null;
   reserves: Array<{
     asset: string;
     amount: string;
