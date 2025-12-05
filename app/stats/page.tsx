@@ -76,13 +76,37 @@ export default function StatsPage() {
         try {
           const walletResponse = await apiClient.getWalletStatus();
           if (walletResponse.success && walletResponse.data) {
-            const walletData = walletResponse.data as any;
+            interface WalletStatusResponse {
+              totals?: {
+                totalUsdValue?: string;
+                pi?: { amount?: string };
+                usdTest?: { amount?: string };
+              };
+              reserve?: {
+                balances?: {
+                  pi?: { amount?: string; usdValue?: string };
+                  usdTest?: { amount?: string; usdValue?: string };
+                };
+              };
+              pool?: {
+                exists?: boolean;
+                poolId?: string | null;
+                fee?: string | null;
+                totalShares?: string | null;
+                reserves?: {
+                  pi?: { amount?: string; usdValue?: string };
+                  usdTest?: { amount?: string; usdValue?: string };
+                };
+              };
+            }
+            
+            const walletData = walletResponse.data as WalletStatusResponse;
             
             // Update total reserve value (includes reserve holdings + pool assets)
             if (walletData.totals?.totalUsdValue) {
               setStats(prev => ({
                 ...prev,
-                totalUsdReserve: walletData.totals.totalUsdValue,
+                totalUsdReserve: walletData.totals.totalUsdValue || '0.00',
                 totalPiReserve: walletData.totals.pi?.amount || prev.totalPiReserve,
                 totalUsdTestReserve: walletData.totals.usdTest?.amount || prev.totalUsdTestReserve,
               }));

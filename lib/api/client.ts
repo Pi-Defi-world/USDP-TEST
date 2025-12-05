@@ -172,7 +172,8 @@ class ApiClient {
            error.message.includes('ERR_CONNECTION_RESET'));
         
         // Don't retry on HTTP errors (4xx, 5xx) or if we've exhausted retries
-        const isHttpError = error instanceof Error && 'status' in error && (error as any).status >= 400;
+        const errorWithStatus = error as Error & { status?: number };
+        const isHttpError = error instanceof Error && 'status' in error && typeof errorWithStatus.status === 'number' && errorWithStatus.status >= 400;
         
         if (!isNetworkError || isHttpError || attempt === maxRetries) {
           // Handle network errors (connection refused, reset, etc.)
@@ -299,7 +300,7 @@ class ApiClient {
             body: JSON.stringify({ walletAddress: userData.wallet_address }),
           });
         }
-      } catch (error) {
+      } catch {
         // Fall through to regular GET request
       }
     }

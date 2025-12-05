@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Key, Wallet, Copy, Check, AlertCircle, Loader2, Lock, Shield } from 'lucide-react';
+import { Key, Copy, Check, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useWalletStore } from '@/lib/store/walletStore';

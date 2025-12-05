@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ export default function TransactionsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     if (!walletAddress) {
       setError('Wallet address is required to fetch transaction history');
       setIsLoading(false);
@@ -51,13 +51,13 @@ export default function TransactionsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [walletAddress]);
 
   useEffect(() => {
     if (isAuthenticated && walletAddress) {
       fetchHistory();
     }
-  }, [isAuthenticated, walletAddress]);
+  }, [isAuthenticated, walletAddress, fetchHistory]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
