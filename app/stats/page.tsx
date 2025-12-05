@@ -106,9 +106,9 @@ export default function StatsPage() {
             if (walletData.totals?.totalUsdValue) {
               setStats(prev => ({
                 ...prev,
-                totalUsdReserve: walletData.totals.totalUsdValue || '0.00',
-                totalPiReserve: walletData.totals.pi?.amount || prev.totalPiReserve,
-                totalUsdTestReserve: walletData.totals.usdTest?.amount || prev.totalUsdTestReserve,
+                totalUsdReserve: walletData.totals?.totalUsdValue || '0.00',
+                totalPiReserve: walletData.totals?.pi?.amount || prev.totalPiReserve,
+                totalUsdTestReserve: walletData.totals?.usdTest?.amount || prev.totalUsdTestReserve,
               }));
             }
             
