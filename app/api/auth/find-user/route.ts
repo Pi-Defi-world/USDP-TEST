@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001';
+import { getBackendUrl } from '@/lib/config/api-config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,7 +35,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Call the backend to find user by username
-    const serverResponse = await fetch(`${BACKEND_URL}/api/auth/find-user`, {
+    const backendUrl = getBackendUrl();
+    const serverResponse = await fetch(`${backendUrl}/api/auth/find-user`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ piUsername }),

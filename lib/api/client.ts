@@ -1,6 +1,7 @@
 import { ApiResponse, AuthResponseData } from '@/types';
+import { getApiBaseUrl, isDevelopment, getConnectionErrorMessage } from '@/lib/config/api-config';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+const API_BASE_URL = getApiBaseUrl();
 
 class ApiClient {
   private baseUrl: string;
@@ -111,11 +112,9 @@ class ApiClient {
       
       // Fallback to Pi access token only in development/sandbox mode
       // In production, JWT tokens are required for security
-      const isDevelopment = process.env.NODE_ENV === 'development' || 
-                           window.location.hostname === 'localhost' ||
-                           window.location.hostname.includes('testnet');
+      const devMode = isDevelopment();
       
-      if (!token && isDevelopment) {
+      if (!token && devMode) {
         token = localStorage.getItem('pi_access_token');
         if (token) {
           console.warn('Using Pi access token instead of JWT (development mode only)');
@@ -124,7 +123,7 @@ class ApiClient {
       
       if (token) {
         defaultHeaders['Authorization'] = `Bearer ${token}`;
-      } else if (!isDevelopment) {
+      } else if (!devMode) {
         console.error('No authentication token available. JWT token required in production.');
       }
     }
@@ -147,7 +146,7 @@ class ApiClient {
         
         // Handle connection errors (no response received)
         if (!response) {
-          throw new Error('Backend server is not responding. Please ensure the backend server is running on port 3001.');
+          throw new Error(getConnectionErrorMessage());
         }
         
         const data = await response.json();
@@ -182,11 +181,11 @@ class ApiClient {
           // Handle network errors (connection refused, reset, etc.)
           if (isNetworkError && !isHttpError) {
             const connectionError = new Error(
-              'Cannot connect to backend server. Please ensure the backend server is running on http://localhost:3001'
+              getConnectionErrorMessage()
             ) as Error & { status?: number; isConnectionError?: boolean };
             connectionError.status = 0;
             connectionError.isConnectionError = true;
-            console.error(`Backend connection failed: ${endpoint}. Is the server running?`);
+            console.error(`Backend connection failed: ${endpoint}. Check NEXT_PUBLIC_SERVER_URL configuration.`);
             throw connectionError;
           }
           

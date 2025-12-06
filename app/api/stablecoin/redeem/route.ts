@@ -1,22 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiResponse } from '@/types';
-
-const SERVER_API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
+import { getBackendUrl } from '@/lib/config/api-config';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!SERVER_API_URL) {
-      console.error('SERVER_API_URL is not configured');
-      return NextResponse.json<ApiResponse>({
-        success: false,
-        error: 'Server configuration error: NEXT_PUBLIC_SERVER_URL is not set',
-        timestamp: new Date().toISOString(),
-      }, { status: 500 });
-    }
-
-    const response = await fetch(`${SERVER_API_URL}/api/stablecoin/redeem`, {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/stablecoin/redeem`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

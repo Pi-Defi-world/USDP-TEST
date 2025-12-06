@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001';
+import { getBackendUrl } from '@/lib/config/api-config';
 
 // POST /api/auth/verify-passphrase - Proxy to backend server
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    const response = await fetch(`${BACKEND_URL}/api/auth/verify-passphrase`, {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/auth/verify-passphrase`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const SERVER_API_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001';
+import { getBackendUrl } from '@/lib/config/api-config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,7 +25,8 @@ export async function POST(request: NextRequest) {
       normalizedBody.secret = secret.trim();
     }
 
-    const response = await fetch(`${SERVER_API_URL}/api/account/import`, {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/account/import`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

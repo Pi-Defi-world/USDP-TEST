@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3001';
+import { getBackendUrl } from '@/lib/config/api-config';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +20,8 @@ export async function POST(request: NextRequest) {
       headers['referer'] = refererHeader || origin;
     }
     
-    const response = await fetch(`${BACKEND_URL}/api/auth/find-user-by-wallet`, {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/auth/find-user-by-wallet`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
