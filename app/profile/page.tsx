@@ -10,7 +10,6 @@ import {
   Copy,
   MessageCircle,
   LogOut,
-  Loader2,
   User,
   Wallet,
   Coins,
@@ -61,6 +60,7 @@ export default function ProfilePage() {
   };
 
   const handlePassphraseVerified = (_walletAddress: string) => {
+    // Wallet address is provided by PassphraseVerification but not needed here
     setShowPassphraseVerification(false);
     toast({
       title: "Wallet Verified",

@@ -12,8 +12,31 @@ import { fetchWithTimeout } from '@/lib/api/fetch-with-timeout';
  * 3. Network connectivity to backend
  * 4. Backend health endpoint response
  */
+interface Diagnostics {
+  timestamp: string;
+  environment: {
+    nodeEnv: string | undefined;
+    hasServerUrl: boolean;
+    serverUrl: string;
+    hasNextPublicServerUrl: boolean;
+    nextPublicServerUrl: string;
+    note: string;
+  };
+  resolved: {
+    backendUrl: string | null;
+    error: string | null;
+  };
+  connectionTest: {
+    attempted: boolean;
+    success: boolean;
+    error: string | null;
+    status: number | null;
+    responseTime: number | null;
+  };
+}
+
 export async function GET() {
-  const diagnostics: any = {
+  const diagnostics: Diagnostics = {
     timestamp: new Date().toISOString(),
     environment: {
       nodeEnv: process.env.NODE_ENV,

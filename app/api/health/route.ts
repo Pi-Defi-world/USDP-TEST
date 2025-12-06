@@ -40,6 +40,13 @@ export async function GET() {
       stack: error instanceof Error ? error.stack : undefined,
     });
     
+    interface DebugInfo {
+      serverUrl: string;
+      nextPublicServerUrl: string;
+      nodeEnv: string | undefined;
+      note: string;
+    }
+
     return NextResponse.json({
       success: false,
       error: errorMessage,
@@ -49,7 +56,7 @@ export async function GET() {
         nextPublicServerUrl: process.env.NEXT_PUBLIC_SERVER_URL || 'NOT SET',
         nodeEnv: process.env.NODE_ENV,
         note: 'Set SERVER_URL (runtime) or NEXT_PUBLIC_SERVER_URL (build-time)',
-      },
-    } as ApiResponse & { debug?: any }, { status: 500 });
+      } as DebugInfo,
+    } as ApiResponse & { debug?: DebugInfo }, { status: 500 });
   }
 }
