@@ -18,7 +18,7 @@ interface AccountServiceCardProps {
   onWalletImported?: (walletAddress: string) => void;
 }
 
-export function AccountServiceCard({ onWalletImported }: AccountServiceCardProps) {
+export function AccountServiceCard({ onWalletImported: _onWalletImported }: AccountServiceCardProps) {
   const [passphrase, setPassphrase] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [step, setStep] = useState<'import' | 'complete'>('import');
@@ -28,7 +28,6 @@ export function AccountServiceCard({ onWalletImported }: AccountServiceCardProps
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuthStore();
-  const { setWalletAddress, fetchBalance } = useWalletStore();
 
   const normalizeMnemonic = (value: string) =>
     value
