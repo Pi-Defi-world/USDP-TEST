@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
     }
     
     const backendUrl = getBackendUrl();
-    console.log('[API Route] Auth/login-passkey - Backend URL:', backendUrl);
     
     const response = await fetchWithTimeout(`${backendUrl}/api/auth/login-passkey`, {
       method: 'POST',
@@ -35,13 +34,9 @@ export async function POST(request: NextRequest) {
       timeout: 30000,
     });
     
-    console.log('[API Route] Auth/login-passkey - Response status:', response.status);
-    
     const data = await response.json();
-    
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('[API Route] Auth/login-passkey - Proxy error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({
       success: false,
@@ -77,7 +72,6 @@ export async function PUT(request: NextRequest) {
     }
     
     const backendUrl = getBackendUrl();
-    console.log('[API Route] Auth/login-passkey (PUT) - Backend URL:', backendUrl);
     
     const response = await fetchWithTimeout(`${backendUrl}/api/auth/login-passkey`, {
       method: 'PUT',
@@ -86,16 +80,13 @@ export async function PUT(request: NextRequest) {
       timeout: 30000,
     });
     
-    console.log('[API Route] Auth/login-passkey (PUT) - Response status:', response.status);
-    
     const data = await response.json();
-    
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('[API Route] Auth/login-passkey (PUT) - Proxy error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({
       success: false,
-      error: 'Internal server error',
+      error: errorMessage,
       timestamp: new Date().toISOString(),
     }, { status: 500 });
   }

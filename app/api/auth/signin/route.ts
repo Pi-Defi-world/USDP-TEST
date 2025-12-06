@@ -7,18 +7,8 @@ import { fetchWithTimeout } from '@/lib/api/fetch-with-timeout';
  * This is the main authentication endpoint for Pi users
  */
 export async function POST(request: NextRequest) {
-  // Log that the route was hit
-  console.log('[API Route] ========== AUTH/SIGNIN ROUTE HIT ==========');
-  console.log('[API Route] Request URL:', request.url);
-  console.log('[API Route] Request method:', request.method);
-  console.log('[API Route] Timestamp:', new Date().toISOString());
-  
   try {
     const body = await request.json();
-    console.log('[API Route] Auth/signin - Request received');
-    console.log('[API Route] Auth/signin - Request body keys:', Object.keys(body));
-    console.log('[API Route] Auth/signin - Has accessToken:', !!body.accessToken);
-    console.log('[API Route] Auth/signin - Has user:', !!body.user);
     
     // Forward origin and referer headers for proper WebAuthn RP ID detection
     const originHeader = request.headers.get('origin');
@@ -44,49 +34,45 @@ export async function POST(request: NextRequest) {
     }
     
     const backendUrl = getBackendUrl();
-    console.log('[API Route] Auth/signin - Backend URL:', backendUrl);
-    console.log('[API Route] Auth/signin - Full backend URL:', `${backendUrl}/api/auth/signin`);
-    console.log('[API Route] Auth/signin - Forwarding request to backend...');
+    const targetUrl = `${backendUrl}/api/auth/signin`;
     
-    const response = await fetchWithTimeout(`${backendUrl}/api/auth/signin`, {
+    const response = await fetchWithTimeout(targetUrl, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
       timeout: 30000,
     });
     
-    console.log('[API Route] Auth/signin - Backend response received');
-    console.log('[API Route] Auth/signin - Response status:', response.status);
-    console.log('[API Route] Auth/signin - Response ok:', response.ok);
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      console.error('[API Route] Auth/signin - Backend error:', {
-        status: response.status,
-        error: data.error,
-        data: data,
-      });
-    } else {
-      console.log('[API Route] Auth/signin - Backend success:', {
-        hasToken: !!data.data?.token,
-        hasUser: !!data.data?.user,
-      });
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      const text = await response.text().catch(() => 'Unable to read response');
+      return NextResponse.json({
+        success: false,
+        error: `Backend returned invalid JSON. Status: ${response.status}. Response: ${text.substring(0, 200)}`,
+        timestamp: new Date().toISOString(),
+      }, { status: response.status || 500 });
     }
     
-    console.log('[API Route] ========== AUTH/SIGNIN ROUTE COMPLETE ==========');
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('[API Route] ========== AUTH/SIGNIN ROUTE ERROR ==========');
-    console.error('[API Route] Auth/signin - Proxy error:', error);
-    console.error('[API Route] Error type:', error instanceof Error ? error.constructor.name : typeof error);
-    console.error('[API Route] Error message:', error instanceof Error ? error.message : String(error));
-    console.error('[API Route] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    const isConfigError = errorMessage.includes('Backend URL is not configured');
+    const isConnectionError = errorMessage.includes('Cannot connect') || 
+                             errorMessage.includes('Failed to fetch') ||
+                             errorMessage.includes('timed out');
+    
     return NextResponse.json({
       success: false,
       error: errorMessage,
       timestamp: new Date().toISOString(),
+      ...(isConfigError && { 
+        hint: 'Set SERVER_URL or NEXT_PUBLIC_SERVER_URL in Vercel environment variables and redeploy' 
+      }),
+      ...(isConnectionError && {
+        hint: 'Check if backend is accessible and CORS is configured correctly'
+      }),
     }, { status: 500 });
   }
 }

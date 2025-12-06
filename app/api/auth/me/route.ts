@@ -34,9 +34,6 @@ export async function GET(request: NextRequest) {
     }
     
     const backendUrl = getBackendUrl();
-    console.log('[API Route] Auth/me - Backend URL:', backendUrl);
-    console.log('[API Route] Auth/me - Has Authorization header:', !!authHeader);
-    console.log('[API Route] Auth/me - Authorization header (first 20 chars):', authHeader?.substring(0, 20));
     
     const response = await fetchWithTimeout(`${backendUrl}/api/auth/me`, {
       method: 'GET',
@@ -44,20 +41,9 @@ export async function GET(request: NextRequest) {
       timeout: 30000,
     });
     
-    console.log('[API Route] Auth/me - Response status:', response.status);
-    
     const data = await response.json();
-    
-    if (!response.ok) {
-      console.error('[API Route] Auth/me - Backend error:', {
-        status: response.status,
-        error: data.error,
-      });
-    }
-    
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Get current user proxy error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({
       success: false,

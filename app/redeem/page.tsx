@@ -158,7 +158,7 @@ export default function RedeemPage() {
       if (errorMessage.includes('Cannot connect to backend') || 
           errorMessage.includes('Failed to fetch') ||
           errorMessage.includes('ERR_CONNECTION')) {
-        errorMessage = 'Backend server is not running. Please start the backend server on port 3001.';
+        errorMessage = 'Unable to connect to the server. Please check your connection and try again.';
       }
       
       setSecretSeedError(errorMessage);

@@ -9,35 +9,27 @@
  * NEXT_PUBLIC_* variables are embedded at build time, SERVER_URL works at runtime
  */
 export function getBackendUrl(): string {
+  // This function is ONLY called server-side in Next.js API routes
   // Try runtime variable first (works without rebuild)
   const runtimeUrl = process.env.SERVER_URL;
-  if (runtimeUrl) {
-    return runtimeUrl.replace(/\/$/, '');
+  if (runtimeUrl && runtimeUrl.trim()) {
+    return runtimeUrl.trim().replace(/\/$/, '');
   }
 
   // Try build-time variable (requires rebuild after setting)
   const buildTimeUrl = process.env.NEXT_PUBLIC_SERVER_URL;
-  if (buildTimeUrl) {
-    return buildTimeUrl.replace(/\/$/, '');
+  if (buildTimeUrl && buildTimeUrl.trim()) {
+    return buildTimeUrl.trim().replace(/\/$/, '');
   }
 
-  // For client-side requests, use relative /api path (Next.js API routes)
-  if (typeof window !== 'undefined') {
-    return '/api';
-  }
-
-  // Server-side fallback (should not happen in production)
+  // In development, fallback to localhost
   if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:3001';
   }
 
-  // Production server-side: fail if not configured
+  // Production: fail if not configured with clear error
   throw new Error(
-    'Backend URL is not configured. Please set either:\n' +
-    '  - SERVER_URL (runtime, no rebuild needed) OR\n' +
-    '  - NEXT_PUBLIC_SERVER_URL (build-time, requires rebuild)\n' +
-    'Set it to your backend server URL (e.g., https://api.yourdomain.com).\n' +
-    'In Vercel: Project Settings → Environment Variables → Add variable → Redeploy'
+    'Backend URL is not configured. Set SERVER_URL or NEXT_PUBLIC_SERVER_URL to your Render backend URL (e.g., https://your-app.onrender.com). In Vercel: Settings → Environment Variables → Add → Redeploy'
   );
 }
 

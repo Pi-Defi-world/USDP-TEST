@@ -106,25 +106,18 @@ class ApiClient {
       
       // Check if JWT token is expired and refresh if needed
       if (token && this.isJWTExpired(token)) {
-        console.log('JWT token expired, refreshing...');
         token = await this.refreshJWTToken();
       }
       
       // Fallback to Pi access token only in development/sandbox mode
-      // In production, JWT tokens are required for security
       const devMode = isDevelopment();
       
       if (!token && devMode) {
         token = localStorage.getItem('pi_access_token');
-        if (token) {
-          console.warn('Using Pi access token instead of JWT (development mode only)');
-        }
       }
       
       if (token) {
         defaultHeaders['Authorization'] = `Bearer ${token}`;
-      } else if (!devMode) {
-        console.error('No authentication token available. JWT token required in production.');
       }
     }
 
@@ -136,75 +129,35 @@ class ApiClient {
       },
     };
 
-    // Retry logic for connection resilience
-    let lastError: Error | null = null;
-    const maxRetries = 3;
-    
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        const response = await fetch(url, config);
-        
-        // Handle connection errors (no response received)
-        if (!response) {
-          throw new Error(getConnectionErrorMessage());
-        }
-        
+    try {
+      const response = await fetch(url, config);
+      
+      if (!response.ok) {
         const data = await response.json();
-
-        if (!response.ok) {
-          // For 404 errors, include the status code in the error message for easier detection
-          const errorMessage = data.error || `HTTP ${response.status}`;
-          const error = new Error(errorMessage) as Error & { status?: number };
-          // Add status code to error for easier checking
-          error.status = response.status;
-          throw error;
-        }
-
-        return data;
-      } catch (error) {
-        lastError = error as Error;
-        
-        // Only retry on network/connection errors, not on HTTP errors
-        const isNetworkError = 
-          error instanceof TypeError && 
-          (error.message.includes('fetch') || 
-           error.message.includes('Failed to fetch') ||
-           error.message.includes('network') ||
-           error.message.includes('ERR_CONNECTION_REFUSED') ||
-           error.message.includes('ERR_CONNECTION_RESET'));
-        
-        // Don't retry on HTTP errors (4xx, 5xx) or if we've exhausted retries
-        const errorWithStatus = error as Error & { status?: number };
-        const isHttpError = error instanceof Error && 'status' in error && typeof errorWithStatus.status === 'number' && errorWithStatus.status >= 400;
-        
-        if (!isNetworkError || isHttpError || attempt === maxRetries) {
-          // Handle network errors (connection refused, reset, etc.)
-          if (isNetworkError && !isHttpError) {
-            const connectionError = new Error(
-              getConnectionErrorMessage()
-            ) as Error & { status?: number; isConnectionError?: boolean };
-            connectionError.status = 0;
-            connectionError.isConnectionError = true;
-            console.error(`Backend connection failed: ${endpoint}. Check NEXT_PUBLIC_SERVER_URL configuration.`);
-            throw connectionError;
-          }
-          
-          // Only log non-404 errors to avoid cluttering console
-          const errorWithStatus = error as Error & { status?: number };
-          if (!(error instanceof Error && errorWithStatus.status === 404)) {
-            console.error(`API request failed: ${endpoint}`, error);
-          }
-          throw error;
-        }
-        
-        // Exponential backoff: 1s, 2s, 4s
-        const delay = 1000 * Math.pow(2, attempt);
-        console.log(`Retrying request to ${endpoint} (attempt ${attempt + 1}/${maxRetries + 1}) after ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        const errorMessage = data.error || `HTTP ${response.status}`;
+        const error = new Error(errorMessage) as Error & { status?: number };
+        error.status = response.status;
+        throw error;
       }
+      
+      return await response.json();
+    } catch (error) {
+      // Handle network/connection errors
+      if (error instanceof TypeError || 
+          (error instanceof Error && 
+           (error.message.includes('fetch') || 
+            error.message.includes('Failed to fetch') ||
+            error.message.includes('network')))) {
+        const connectionError = new Error(
+          getConnectionErrorMessage()
+        ) as Error & { status?: number; isConnectionError?: boolean };
+        connectionError.status = 0;
+        connectionError.isConnectionError = true;
+        throw connectionError;
+      }
+      
+      throw error;
     }
-    
-    throw lastError || new Error('Request failed after retries');
   }
 
   // Authentication methods
