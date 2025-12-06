@@ -7,9 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const sessionId = request.headers.get('x-session-id') || 'default';
-
-    // Forward origin and referer headers so backend can determine RP ID        
-    // Extract origin from request headers or derive from request URL
+ 
     const originHeader = request.headers.get('origin');
     const refererHeader = request.headers.get('referer');
     const origin = originHeader || 
