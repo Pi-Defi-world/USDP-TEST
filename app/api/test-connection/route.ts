@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getBackendUrl } from '@/lib/config/api-config';
 import { fetchWithTimeout } from '@/lib/api/fetch-with-timeout';
 
 /**
@@ -59,11 +58,11 @@ export async function GET() {
     },
   };
 
-  // Step 1: Try to resolve backend URL
-  try {
-    diagnostics.resolved.backendUrl = getBackendUrl();
-  } catch (error) {
-    diagnostics.resolved.error = error instanceof Error ? error.message : 'Unknown error';
+  // Step 1: Resolve backend URL directly from env vars
+  diagnostics.resolved.backendUrl = (process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || '').replace(/\/$/, '');
+  
+  if (!diagnostics.resolved.backendUrl) {
+    diagnostics.resolved.error = 'Backend URL not configured';
     return NextResponse.json({
       success: false,
       diagnostics,

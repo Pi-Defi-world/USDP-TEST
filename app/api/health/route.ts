@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
 import { ApiResponse } from '@/types';
-import { getBackendUrl } from '@/lib/config/api-config';
 import { fetchWithTimeout } from '@/lib/api/fetch-with-timeout';
 
 export async function GET() {
   try {
-    const backendUrl = getBackendUrl();
+    const backendUrl = (process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || '').replace(/\/$/, '');
+    
+    if (!backendUrl) {
+      return NextResponse.json<ApiResponse>({
+        success: false,
+        error: 'Backend URL not configured. Set SERVER_URL or NEXT_PUBLIC_SERVER_URL',
+        timestamp: new Date().toISOString(),
+      }, { status: 500 });
+    }
     console.log('[API Route] Health check - Backend URL:', backendUrl);
     console.log('[API Route] SERVER_URL:', process.env.SERVER_URL || 'NOT SET');
     console.log('[API Route] NEXT_PUBLIC_SERVER_URL:', process.env.NEXT_PUBLIC_SERVER_URL || 'NOT SET');

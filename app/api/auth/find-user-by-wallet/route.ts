@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBackendUrl } from '@/lib/config/api-config';
 
 export async function POST(request: NextRequest) {
   try {
+    const backendUrl = (process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || '').replace(/\/$/, '');
+    
+    if (!backendUrl) {
+      return NextResponse.json({
+        success: false,
+        error: 'Backend URL not configured. Set SERVER_URL or NEXT_PUBLIC_SERVER_URL',
+        timestamp: new Date().toISOString(),
+      }, { status: 500 });
+    }
+    
     const body = await request.json();
     const originHeader = request.headers.get('origin');
     const refererHeader = request.headers.get('referer');
@@ -19,8 +28,6 @@ export async function POST(request: NextRequest) {
       headers['origin'] = origin;
       headers['referer'] = refererHeader || origin;
     }
-    
-    const backendUrl = getBackendUrl();
     const response = await fetch(`${backendUrl}/api/auth/find-user-by-wallet`, {
       method: 'POST',
       headers,

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBackendUrl } from '@/lib/config/api-config';
 import { fetchWithTimeout } from '@/lib/api/fetch-with-timeout';
 
 /**
@@ -9,6 +8,17 @@ import { fetchWithTimeout } from '@/lib/api/fetch-with-timeout';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    
+    // Get backend URL directly from environment variables
+    const backendUrl = (process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || '').replace(/\/$/, '');
+    
+    if (!backendUrl) {
+      return NextResponse.json({
+        success: false,
+        error: 'Backend URL not configured. Set SERVER_URL or NEXT_PUBLIC_SERVER_URL',
+        timestamp: new Date().toISOString(),
+      }, { status: 500 });
+    }
     
     // Forward origin and referer headers for proper WebAuthn RP ID detection
     const originHeader = request.headers.get('origin');
@@ -33,7 +43,6 @@ export async function POST(request: NextRequest) {
       headers['x-session-id'] = sessionId;
     }
     
-    const backendUrl = getBackendUrl();
     const targetUrl = `${backendUrl}/api/auth/signin`;
     
     const response = await fetchWithTimeout(targetUrl, {

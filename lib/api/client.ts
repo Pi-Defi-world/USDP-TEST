@@ -132,32 +132,43 @@ class ApiClient {
     try {
       const response = await fetch(url, config);
       
-      if (!response.ok) {
-        const data = await response.json();
-        const errorMessage = data.error || `HTTP ${response.status}`;
-        const error = new Error(errorMessage) as Error & { status?: number };
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        const text = await response.text().catch(() => 'Unable to read response');
+        const error = new Error(
+          `Invalid JSON response from server. Status: ${response.status}. Response: ${text.substring(0, 200)}`
+        ) as Error & { status?: number };
         error.status = response.status;
         throw error;
       }
-      
-      return await response.json();
-    } catch (error) {
+
+        if (!response.ok) {
+          const errorMessage = data.error || `HTTP ${response.status}`;
+          const error = new Error(errorMessage) as Error & { status?: number };
+          error.status = response.status;
+          throw error;
+        }
+
+        return data;
+      } catch (error) {
       // Handle network/connection errors
       if (error instanceof TypeError || 
           (error instanceof Error && 
-           (error.message.includes('fetch') || 
-            error.message.includes('Failed to fetch') ||
+          (error.message.includes('fetch') || 
+           error.message.includes('Failed to fetch') ||
             error.message.includes('network')))) {
-        const connectionError = new Error(
-          getConnectionErrorMessage()
-        ) as Error & { status?: number; isConnectionError?: boolean };
-        connectionError.status = 0;
-        connectionError.isConnectionError = true;
-        throw connectionError;
-      }
-      
-      throw error;
-    }
+            const connectionError = new Error(
+              getConnectionErrorMessage()
+            ) as Error & { status?: number; isConnectionError?: boolean };
+            connectionError.status = 0;
+            connectionError.isConnectionError = true;
+            throw connectionError;
+          }
+          
+          throw error;
+        }
   }
 
   // Authentication methods

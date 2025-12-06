@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiResponse } from '@/types';
 
-const SERVER_API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
-
 // GET /api/pools - Proxy to server
 export async function GET(request: NextRequest) {
   try {
+    const backendUrl = (process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || '').replace(/\/$/, '');
+    if (!backendUrl) {
+      return NextResponse.json<ApiResponse>({
+        success: false,
+        error: 'Backend URL not configured. Set SERVER_URL or NEXT_PUBLIC_SERVER_URL',
+        timestamp: new Date().toISOString(),
+      }, { status: 500 });
+    }
+    
     const { searchParams } = new URL(request.url);
     const poolId = searchParams.get('id');
     
     // Proxy to server pools endpoint
-    const url = poolId ? `${SERVER_API_URL}/pools?id=${poolId}` : `${SERVER_API_URL}/pools`;
+    const url = poolId ? `${backendUrl}/pools?id=${poolId}` : `${backendUrl}/pools`;
     const response = await fetch(url);
     const data = await response.json();
     
@@ -32,7 +39,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Proxy to server pool creation endpoint
-    const response = await fetch(`${SERVER_API_URL}/pools/create`, {
+    const response = await fetch(`${backendUrl}/pools/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -60,7 +67,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
 
     // Proxy to server pool trade endpoint
-    const response = await fetch(`${SERVER_API_URL}/pools/trade`, {
+    const response = await fetch(`${backendUrl}/pools/trade`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

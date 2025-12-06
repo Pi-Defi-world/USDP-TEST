@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBackendUrl } from '@/lib/config/api-config';
 import { fetchWithTimeout } from '@/lib/api/fetch-with-timeout';
 
 export async function GET(request: NextRequest) {
   try {
+    // Get backend URL directly from environment variables
+    const backendUrl = (process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || '').replace(/\/$/, '');
+    
+    if (!backendUrl) {
+      return NextResponse.json({
+        success: false,
+        error: 'Backend URL not configured. Set SERVER_URL or NEXT_PUBLIC_SERVER_URL',
+        timestamp: new Date().toISOString(),
+      }, { status: 500 });
+    }
+    
     // Forward authorization header from client
     const authHeader = request.headers.get('authorization');
     
@@ -32,8 +42,6 @@ export async function GET(request: NextRequest) {
       headers['origin'] = origin;
       headers['referer'] = refererHeader || origin;
     }
-    
-    const backendUrl = getBackendUrl();
     
     const response = await fetchWithTimeout(`${backendUrl}/api/auth/me`, {
       method: 'GET',

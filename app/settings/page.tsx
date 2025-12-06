@@ -8,34 +8,9 @@ import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/lib/api/client';
 import { TestnetBadge } from '@/components/TestnetBadge';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Loader2, Trash2, Shield, Calendar, Monitor, Network } from 'lucide-react';
-
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-interface Passkey {
-  id: string;
-  credentialId: string;
-  deviceName: string | null;
-  lastUsedAt: string;
-  createdAt: string;
-  isActive: boolean;
-}
+import { AlertCircle, Network } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [passkeys, setPasskeys] = useState<Passkey[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const { toast } = useToast();
   const isTestnet = apiClient.isTestnetMode();
   const usdTestAssetCode = process.env.NEXT_PUBLIC_USD_TEST_ASSET_CODE || 'USDTEST';
 

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getBackendUrl } from '@/lib/config/api-config';
  
 export async function GET() {
   try {
+    const backendUrl = (process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || '').replace(/\/$/, '');
+    
     const config = {
       hasServerUrl: !!process.env.SERVER_URL,
       serverUrl: process.env.SERVER_URL || 'NOT SET',
@@ -11,14 +12,8 @@ export async function GET() {
       hasApiUrl: !!process.env.NEXT_PUBLIC_API_URL,
       apiUrl: process.env.NEXT_PUBLIC_API_URL || 'NOT SET',
       nodeEnv: process.env.NODE_ENV,
-      resolvedBackendUrl: null as string | null,
+      resolvedBackendUrl: backendUrl || 'NOT SET',
     };
-
-    try {
-      config.resolvedBackendUrl = getBackendUrl();
-    } catch (error) {
-      config.resolvedBackendUrl = `ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`;
-    }
 
     return NextResponse.json({
       success: true,
