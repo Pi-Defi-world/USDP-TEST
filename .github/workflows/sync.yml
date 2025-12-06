@@ -36,8 +36,11 @@ jobs:
             cd ..
           fi
           
-          rsync -av --delete --exclude '.git' --exclude '.github/workflows' ./ temp_usdp_test_frontend/
+          rsync -av --delete --exclude '.git' --exclude '.github' --exclude 'temp_usdp_test_frontend' --exclude 'node_modules' --exclude '.next' ./ temp_usdp_test_frontend/
           cd temp_usdp_test_frontend
+          
+          # Clean up temp directory if it got copied
+          rm -rf temp_usdp_test_frontend 2>/dev/null || true
           
           # Configure git if not already done
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -51,3 +54,7 @@ jobs:
           else
             echo "🟢 No changes detected — skipping commit."
           fi
+          
+          # Clean up temp directory
+          cd ..
+          rm -rf temp_usdp_test_frontend
