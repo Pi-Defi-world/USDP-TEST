@@ -2,175 +2,75 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, Mail, MessageCircle, HelpCircle, FileText, Clock, Key, Wallet, Copy, Check, AlertCircle, Loader2, Lock } from 'lucide-react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Wallet, Copy, Check, AlertCircle, Loader2, Shield, Eye, EyeOff } from 'lucide-react';
+import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/lib/store/authStore';
-import { generateAesKey, aesEncrypt, exportCryptoKey } from '@/lib/crypto/client-crypto';
-import { idbSet, STORES } from '@/lib/storage/idb';
+import { useWalletStore } from '@/lib/store/walletStore';
+import { WalletFundingDialog } from '@/components/WalletFundingDialog';
 
 export default function AccountServicePage() {
-  const [passphrase, setPassphrase] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [step, setStep] = useState<'passphrase' | 'password' | 'complete'>('passphrase');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [derivedWallet, setDerivedWallet] = useState<{ walletAddress: string; secretSeed: string } | null>(null);
+  const [generatedWallet, setGeneratedWallet] = useState<{
+    publicKey: string;
+    secretSeed: string;
+    seedAmount: string;
+    transactionHash: string;
+  } | null>(null);
+  const [showSecretSeed, setShowSecretSeed] = useState(false);
   const [copied, setCopied] = useState<'address' | 'seed' | null>(null);
+  const [showFundingDialog, setShowFundingDialog] = useState(false);
+  
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuthStore();
+  const { isAuthenticated, generateWallet } = useAuthStore();
+  const { setWalletAddress, fetchBalance } = useWalletStore();
 
-  const handleDerive = async () => {
-    if (!passphrase.trim()) {
-      setError('Please enter your 24-word passphrase');
+  const handleGenerateWallet = async () => {
+    if (!isAuthenticated) {
+      setError('Please sign in to generate a wallet');
       return;
     }
 
-    const words = passphrase.trim().toLowerCase().split(/\s+/);
-    if (words.length !== 24) {
-      setError('Passphrase must contain exactly 24 words');
-      return;
-    }
-
-    setIsLoading(true);
+    setIsGenerating(true);
     setError(null);
-    setDerivedWallet(null);
+    setGeneratedWallet(null);
 
     try {
-      // Use the existing /api/account/import endpoint directly
-      const response = await fetch('/api/account/import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mnemonic: passphrase.trim().toLowerCase() }),
-      });
-
-      const data = await response.json();
+      const result = await generateWallet();
       
-      if (data.success && data.publicKey && data.secret) {
-        setDerivedWallet({
-          walletAddress: data.publicKey,
-          secretSeed: data.secret,
+      if (result.success && result.data) {
+        setGeneratedWallet({
+          publicKey: result.data.publicKey,
+          secretSeed: result.data.secretSeed,
+          seedAmount: result.data.seedAmount || '2',
+          transactionHash: result.data.transactionHash || '',
         });
-        setStep('password');
+        
+        // Update wallet store
+        setWalletAddress(result.data.publicKey);
+        await fetchBalance(result.data.publicKey);
+        
         toast({
-          title: 'Wallet Derived Successfully',
-          description: 'Please set a PIN/password to encrypt your wallet.',
+          title: 'Wallet Generated Successfully!',
+          description: `Your wallet has been created and seeded with ${result.data.seedAmount || '2'} Test-Pi.`,
         });
       } else {
-        throw new Error(data.error || 'Failed to derive wallet from passphrase');
+        throw new Error(result.error || 'Failed to generate wallet');
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to derive wallet from passphrase';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate wallet';
       setError(errorMessage);
       toast({
-        title: 'Error',
+        title: 'Generation Failed',
         description: errorMessage,
         variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEncryptAndStore = async () => {
-    if (!password.trim()) {
-      setError('Please enter a PIN/password');
-      return;
-    }
-
-    if (password.length < 4) {
-      setError('PIN/password must be at least 4 characters');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('PIN/password confirmation does not match');
-      return;
-    }
-
-    if (!derivedWallet) {
-      setError('Wallet not derived. Please derive wallet first.');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const { walletAddress, secretSeed } = derivedWallet;
-
-      // If user is authenticated, link wallet to user account via AccountService
-      if (isAuthenticated && user?.id) {
-        try {
-          const { importWallet } = useAuthStore.getState();
-          const importResult = await importWallet(user.id, passphrase.trim().toLowerCase());
-          
-          if (!importResult.success) {
-            throw new Error(importResult.error || 'Failed to link wallet to user account');
-          }
-
-          // Verify wallet address matches
-          if (importResult.data?.publicKey && importResult.data.publicKey !== walletAddress) {
-            throw new Error('Wallet address mismatch. Please check your passphrase.');
-          }
-        } catch (err) {
-          const errorMessage = err instanceof Error ? err.message : 'Failed to link wallet to user account';
-          setError(errorMessage);
-          toast({
-            title: 'Error',
-            description: errorMessage,
-            variant: 'destructive',
-          });
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // Generate AES key and encrypt secret seed (following reImportWallet pattern)
-      const aesKey = await generateAesKey();
-      const { ciphertext, iv } = await aesEncrypt(aesKey, secretSeed);
-      const rawAesKey = await exportCryptoKey(aesKey);
-
-      // Store encrypted seed and AES key in IndexedDB
-      await idbSet(STORES.ENCRYPTED_SEEDS, walletAddress, {
-        ciphertext: Array.from(ciphertext),
-        iv: Array.from(iv),
-      });
-      await idbSet(STORES.AES_KEYS, walletAddress, Array.from(rawAesKey));
-
-      // If user is authenticated, also store server-side encrypted secret
-      if (isAuthenticated && user?.id) {
-        try {
-          const { storeEncryptedSecret } = useAuthStore.getState();
-          await storeEncryptedSecret(user.id, walletAddress, passphrase.trim().toLowerCase(), password);
-        } catch (err) {
-          // Log error but don't fail - client-side storage is primary
-          console.warn('Failed to store server-side encrypted secret:', err);
-        }
-      }
-
-      setStep('complete');
-      toast({
-        title: 'Wallet Imported Successfully',
-        description: isAuthenticated 
-          ? 'Your wallet has been linked to your account, encrypted, and stored securely. You can now use it for transactions.'
-          : 'Your wallet has been encrypted and stored securely. You can now use it for transactions.',
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to encrypt and store wallet';
-      setError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
@@ -192,361 +92,265 @@ export default function AccountServicePage() {
     }
   };
 
-  const handleReset = () => {
-    setPassphrase('');
-    setPassword('');
-    setConfirmPassword('');
-    setStep('passphrase');
-    setDerivedWallet(null);
-    setError(null);
+  const handleAcknowledgeSecret = () => {
+    // Show funding dialog after acknowledging secret seed is saved
+    setShowFundingDialog(true);
   };
+  
+  const handleFundingDialogContinue = () => {
+    // After dialog, clear wallet generation state but keep wallet address in store
+    setGeneratedWallet(null);
+    setShowSecretSeed(false);
+    setError(null);
+    setShowFundingDialog(false);
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#000000] flex items-center justify-center p-4 page-transition">
+        <Card className="bg-panel border-[#1C1F25] max-w-md w-full">
+          <CardHeader>
+            <CardTitle className="text-[#E9ECEF]">Authentication Required</CardTitle>
+            <CardDescription className="text-[#707784]">
+              Please sign in to access account services
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-[#707784] text-center mb-4">
+              You need to be authenticated to generate wallets.
+            </p>
+            <Link href="/profile">
+              <Button className="w-full bg-gradient-blue glow-blue-hover btn-press">
+                Go to Profile
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show wallet details after generation
+  if (generatedWallet) {
+    return (
+      <div className="min-h-screen bg-[#000000] page-transition pb-20 lg:pb-0">
+        <div className="container mx-auto px-4 py-8 max-w-2xl">
+          <Card className="bg-panel border-[#1C1F25]">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#E9ECEF]">
+                <Check className="h-5 w-5 text-green-500" />
+                Wallet Generated Successfully
+              </CardTitle>
+              <CardDescription className="text-[#707784]">
+                Your wallet has been created and seeded. Please save your secret seed securely.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Alert className="bg-red-950/20 border-red-800">
+                <AlertCircle className="h-4 w-4 text-red-500" />
+                <AlertDescription className="text-[#E9ECEF]">
+                  <strong className="text-red-400">CRITICAL: Save Your Secret Seed</strong>
+                  <p className="text-sm text-[#707784] mt-2">
+                    Your secret seed is shown below. This is the ONLY time it will be displayed. 
+                    You MUST save it securely. If you lose it, you will lose access to your wallet and funds.
+                    We cannot recover it for you.
+                  </p>
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium text-[#E9ECEF]">Wallet Address (Public Key)</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCopy(generatedWallet.publicKey, 'address')}
+                    className="p-1 h-auto"
+                  >
+                    {copied === 'address' ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-[#707784]" />
+                    )}
+                  </Button>
+                </div>
+                <div className="p-3 rounded bg-panel-light border border-[#1C1F25]">
+                  <p className="text-sm text-[#707784] font-mono break-all">
+                    {generatedWallet.publicKey}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium text-[#E9ECEF]">Secret Seed (PRIVATE - SAVE THIS)</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowSecretSeed(!showSecretSeed)}
+                      className="p-1 h-auto"
+                    >
+                      {showSecretSeed ? (
+                        <EyeOff className="h-4 w-4 text-[#707784]" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-[#707784]" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCopy(generatedWallet.secretSeed, 'seed')}
+                      className="p-1 h-auto"
+                    >
+                      {copied === 'seed' ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4 text-[#707784]" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <div className="p-3 rounded bg-red-950/10 border-2 border-red-800">
+                  <p className={`text-sm font-mono break-all ${showSecretSeed ? 'text-[#E9ECEF]' : 'text-[#707784]'}`}>
+                    {showSecretSeed ? generatedWallet.secretSeed : '••••••••••••••••••••••••••••••••••••••••••••••••••••••••'}
+                  </p>
+                </div>
+                <p className="text-xs text-[#707784]">
+                  Store this in a secure password manager or write it down and keep it safe. Never share it with anyone.
+                </p>
+              </div>
+
+              {generatedWallet.seedAmount && (
+                <Alert className="bg-green-950/20 border-green-800">
+                  <Check className="h-4 w-4 text-green-500" />
+                  <AlertDescription className="text-[#707784]">
+                    Wallet seeded with {generatedWallet.seedAmount} Test-Pi
+                    {generatedWallet.transactionHash && (
+                      <span className="block mt-1 text-xs font-mono">
+                        TX: {generatedWallet.transactionHash}
+                      </span>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="pt-4 border-t border-[#1C1F25]">
+                <Button
+                  onClick={handleAcknowledgeSecret}
+                  className="w-full bg-gradient-blue glow-blue-hover btn-press"
+                >
+                  I Have Saved My Secret Seed
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Wallet Funding Dialog */}
+        <WalletFundingDialog
+          open={showFundingDialog}
+          onOpenChange={setShowFundingDialog}
+          walletAddress={generatedWallet.publicKey}
+          onContinue={handleFundingDialogContinue}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#000000] page-transition pb-20 lg:pb-0">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-[#E9ECEF] mb-2">Account Service</h1>
-          <p className="text-[#707784]">Support and service information for your USDP account</p>
+          <p className="text-[#707784]">Generate your USDP wallet</p>
         </div>
 
         <div className="space-y-6">
-          {/* Account Service - Passphrase to Wallet */}
+          {/* Wallet Generation Card */}
           <Card className="bg-panel border-[#1C1F25]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#E9ECEF]">
-                <Key className="h-5 w-5 text-gradient-blue" />
-                Account Service
+                <Wallet className="h-5 w-5 text-gradient-blue" />
+                Create New Wallet
               </CardTitle>
               <CardDescription className="text-[#707784]">
-                Convert your Pi Network passphrase to wallet address and secret seed
+                Generate a new wallet to start using USDP services. Any existing wallet will be cleared.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {step === 'passphrase' && (
-                <>
-                  <Alert className="bg-yellow-950/20 border-yellow-800">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-[#707784]">
-                      This service converts your 24-word passphrase into a wallet address and secret seed. 
-                      After derivation, you&apos;ll set a PIN/password to encrypt and store your wallet securely.
-                    </AlertDescription>
-                  </Alert>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="passphrase" className="text-[#E9ECEF]">24-Word Passphrase</Label>
-                    <textarea
-                      id="passphrase"
-                      className="flex min-h-[120px] w-full rounded-md border border-[#1C1F25] bg-panel-light px-3 py-2 text-sm text-[#E9ECEF] ring-offset-background placeholder:text-[#707784] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      placeholder="Enter your 24-word passphrase (separated by spaces)"
-                      value={passphrase}
-                      onChange={(e) => {
-                        setPassphrase(e.target.value);
-                        setError(null);
-                      }}
-                      disabled={isLoading}
-                    />
-                    <p className="text-xs text-[#707784]">
-                      Enter the 24-word passphrase you used when creating your Pi Network wallet
-                    </p>
-                  </div>
-
-                  {error && (
-                    <Alert variant="destructive" className="bg-red-950/20 border-red-800">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <Button
-                    onClick={handleDerive}
-                    disabled={isLoading || !passphrase.trim()}
-                    className="w-full bg-gradient-blue glow-blue-hover btn-press"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Key className="mr-2 h-4 w-4" />
-                        Derive Wallet
-                      </>
-                    )}
-                  </Button>
-                </>
+              {error && (
+                <Alert variant="destructive" className="bg-red-950/20 border-red-800">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
 
-              {step === 'password' && derivedWallet && (
-                <>
-                  <Alert className="bg-blue-950/20 border-blue-800">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-[#707784]">
-                      Wallet derived successfully! Set a PIN/password to encrypt and store your wallet.
-                      {isAuthenticated && user?.id && (
-                        <span className="block mt-1 text-xs">
-                          This wallet will be linked to your account ({user.piUsername || user.id}).
-                        </span>
-                      )}
-                    </AlertDescription>
-                  </Alert>
+              <Alert className="bg-yellow-950/20 border-yellow-800">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-[#707784]">
+                  <strong className="text-[#E9ECEF]">Create a New Wallet</strong>
+                  <p className="text-sm mt-1">
+                    We&apos;ll create a new Stellar/Pi wallet for you and automatically seed it with Test-Pi. 
+                    You&apos;ll receive your wallet address and secret seed. 
+                    <strong className="text-yellow-400"> Save your secret seed securely - it cannot be recovered!</strong>
+                  </p>
+                  <p className="text-sm mt-2">
+                    <strong>Note:</strong> If you already have a wallet, creating a new one will clear your old wallet from the database. 
+                    You will lose access to any funds in your old wallet if you don&apos;t have the secret seed.
+                  </p>
+                </AlertDescription>
+              </Alert>
 
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-[#E9ECEF]">Wallet Address</Label>
-                    <div className="flex items-center gap-2 p-2 rounded bg-panel-light border border-[#1C1F25]">
-                      <p className="text-sm text-[#707784] font-mono break-all flex-1">
-                        {derivedWallet.walletAddress}
-                      </p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleCopy(derivedWallet.walletAddress, 'address')}
-                        className="p-1 h-auto"
-                      >
-                        {copied === 'address' ? (
-                          <Check className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="text-[#E9ECEF]">PIN/Password</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="Enter a PIN/password (min 4 characters)"
-                        value={password}
-                        onChange={(e) => {
-                          setPassword(e.target.value);
-                          setError(null);
-                        }}
-                        disabled={isLoading}
-                        className="bg-panel-light border-[#1C1F25]"
-                      />
-                      <p className="text-xs text-[#707784]">
-                        This PIN/password will be used to encrypt your wallet and authorize transactions
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword" className="text-[#E9ECEF]">Confirm PIN/Password</Label>
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        placeholder="Confirm your PIN/password"
-                        value={confirmPassword}
-                        onChange={(e) => {
-                          setConfirmPassword(e.target.value);
-                          setError(null);
-                        }}
-                        disabled={isLoading}
-                        className="bg-panel-light border-[#1C1F25]"
-                      />
-                    </div>
-                  </div>
-
-                  {error && (
-                    <Alert variant="destructive" className="bg-red-950/20 border-red-800">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={handleReset}
-                      disabled={isLoading}
-                      className="flex-1 border-[#1C1F25]"
-                    >
-                      Back
-                    </Button>
-                    <Button
-                      onClick={handleEncryptAndStore}
-                      disabled={isLoading || !password.trim() || password !== confirmPassword}
-                      className="flex-1 bg-gradient-blue glow-blue-hover btn-press"
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Encrypting...
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="mr-2 h-4 w-4" />
-                          Encrypt & Store Wallet
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </>
-              )}
-
-              {step === 'complete' && derivedWallet && (
-                <>
-                  <Alert className="bg-green-950/20 border-green-800">
-                    <Check className="h-4 w-4" />
-                    <AlertDescription className="text-[#E9ECEF]">
-                      <strong>Wallet Imported Successfully!</strong>
-                      <p className="text-sm text-[#707784] mt-1">
-                        Your wallet has been encrypted and stored securely. You can now use your PIN/password for transactions.
-                      </p>
-                    </AlertDescription>
-                  </Alert>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-[#E9ECEF]">Wallet Address</Label>
-                    <div className="flex items-center gap-2 p-2 rounded bg-panel-light border border-[#1C1F25]">
-                      <p className="text-sm text-[#707784] font-mono break-all flex-1">
-                        {derivedWallet.walletAddress}
-                      </p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleCopy(derivedWallet.walletAddress, 'address')}
-                        className="p-1 h-auto"
-                      >
-                        {copied === 'address' ? (
-                          <Check className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Alert className="bg-blue-950/20 border-blue-800">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-[#707784] text-xs">
-                      Your wallet is now encrypted and stored. The secret seed is encrypted and stored locally.
-                      {isAuthenticated && user?.id && (
-                        <span className="block mt-1">
-                          ✓ Wallet linked to your account ({user.piUsername || user.id})
-                          <br />
-                          ✓ Encrypted wallet stored server-side for backup
-                          <br />
-                          ✓ Ready for mint, redeem, and other transactions
-                        </span>
-                      )}
-                    </AlertDescription>
-                  </Alert>
-
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={handleReset}
-                      className="flex-1 border-[#1C1F25]"
-                    >
-                      Import Another Wallet
-                    </Button>
-                    <Link href="/profile" className="flex-1">
-                      <Button className="w-full bg-gradient-blue glow-blue-hover btn-press">
-                        Go to Profile
-                      </Button>
-                    </Link>
-                  </div>
-                </>
-              )}
+              <Button
+                onClick={handleGenerateWallet}
+                disabled={isGenerating}
+                className="w-full h-14 text-lg font-semibold bg-gradient-blue glow-blue-hover btn-press"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Generating Wallet...
+                  </>
+                ) : (
+                  <>
+                    <Wallet className="mr-2 h-5 w-5" />
+                    Generate New Wallet
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
 
-          {/* Service Overview */}
+          {/* Information Cards */}
           <Card className="bg-panel border-[#1C1F25]">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#E9ECEF]">
                 <Shield className="h-5 w-5 text-gradient-blue" />
-                Account Services
+                Security Information
               </CardTitle>
-              <CardDescription className="text-[#707784]">
-                Comprehensive account management and support services
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="p-4 rounded-lg bg-panel-light border border-[#1C1F25]">
-                  <h3 className="font-semibold text-[#E9ECEF] mb-2">Wallet Management</h3>
-                  <p className="text-sm text-[#707784]">
-                    Manage your wallet address, verify your passphrase, and secure your account with passkey authentication.
-                  </p>
-                </div>
-                <div className="p-4 rounded-lg bg-panel-light border border-[#1C1F25]">
-                  <h3 className="font-semibold text-[#E9ECEF] mb-2">Transaction Support</h3>
-                  <p className="text-sm text-[#707784]">
-                    View your transaction history, track mint and redeem operations, and monitor your USDP balance.
-                  </p>
-                </div>
-                <div className="p-4 rounded-lg bg-panel-light border border-[#1C1F25]">
-                  <h3 className="font-semibold text-[#E9ECEF] mb-2">Security Features</h3>
-                  <p className="text-sm text-[#707784]">
-                    Passphrase verification, passkey authentication, and secure wallet import/export functionality.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Support Options */}
-          <Card className="bg-panel border-[#1C1F25]">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#E9ECEF]">
-                <HelpCircle className="h-5 w-5 text-gradient-blue" />
-                Get Help
-              </CardTitle>
-              <CardDescription className="text-[#707784]">
-                Contact our support team or access helpful resources
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Link href="/contact" className="block">
-                <div className="p-4 rounded-lg bg-panel-light border border-[#1C1F25] hover:bg-[#16191F] transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <MessageCircle className="h-5 w-5 text-gradient-blue" />
-                      <div>
-                        <div className="font-semibold text-[#E9ECEF]">Contact Support</div>
-                        <div className="text-xs text-[#707784]">Get in touch with our support team</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-              <Link href="/privacy" className="block">
-                <div className="p-4 rounded-lg bg-panel-light border border-[#1C1F25] hover:bg-[#16191F] transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-gradient-blue" />
-                      <div>
-                        <div className="font-semibold text-[#E9ECEF]">Privacy Policy</div>
-                        <div className="text-xs text-[#707784]">Learn about our privacy practices</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            </CardContent>
-          </Card>
-
-          {/* Service Hours */}
-          <Card className="bg-panel border-[#1C1F25]">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#E9ECEF]">
-                <Clock className="h-5 w-5 text-gradient-blue" />
-                Service Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-sm text-[#707784]">
-                <p>
-                  Our account service is available 24/7 for automated operations. For support inquiries, 
-                  please use the contact form and we&apos;ll respond within 24-48 hours.
+              <div className="p-4 rounded-lg bg-panel-light border border-[#1C1F25]">
+                <h3 className="font-semibold text-[#E9ECEF] mb-2">Non-Custodial Wallet</h3>
+                <p className="text-sm text-[#707784]">
+                  Your wallet is non-custodial. We never store your secret seed. 
+                  You are responsible for keeping it safe and secure.
                 </p>
-                <p>
-                  All transactions are processed on the Pi Network blockchain and are subject to network 
-                  confirmation times.
+              </div>
+              <div className="p-4 rounded-lg bg-panel-light border border-[#1C1F25]">
+                <h3 className="font-semibold text-[#E9ECEF] mb-2">Secret Seed Security</h3>
+                <p className="text-sm text-[#707784]">
+                  Your secret seed is required for every transaction. Store it in a secure password manager 
+                  or write it down and keep it in a safe place. Never share it with anyone.
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-panel-light border border-[#1C1F25]">
+                <h3 className="font-semibold text-[#E9ECEF] mb-2">Lost Secret Seed?</h3>
+                <p className="text-sm text-[#707784]">
+                  If you lose your secret seed, you can create a new wallet. However, you will lose access 
+                  to any funds in your old wallet. We cannot recover lost secret seeds. Creating a new wallet 
+                  will clear your old wallet from our database.
                 </p>
               </div>
             </CardContent>

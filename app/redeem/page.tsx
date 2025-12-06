@@ -8,39 +8,57 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/lib/store/authStore';
-import { PasswordPromptDialog } from '@/components/PasswordPromptDialog';
+import { SecretSeedInputDialog } from '@/components/SecretSeedInputDialog';
 import { usePriceStore } from '@/lib/store/priceStore';
 import { useWalletStore } from '@/lib/store/walletStore';
 import { usePi } from '@/components/providers/pi-provider';
 import { apiClient } from '@/lib/api/client';
-import { TestnetBadge } from '@/components/TestnetBadge';
-import { Loader2, AlertCircle, CheckCircle, Wallet, Settings, ArrowRight } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, Settings, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function RedeemPage() {
   const { isAuthenticated } = usePi();
-  const { walletAddress, balance, fetchBalance } = useWalletStore();
+  const { user: authUser } = useAuthStore();
+  const { walletAddress, balance, fetchBalance, setWalletAddress } = useWalletStore();
   const { piPrice, fetchPiPrice } = usePriceStore();
   const [amount, setAmount] = useState('');
   const [slippage, setSlippage] = useState(0.5);
   const [showSlippage, setShowSlippage] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [transactionResult, setTransactionResult] = useState<{ success: boolean; txHash?: string; error?: string } | null>(null);
+  const [transactionResult, setTransactionResult] = useState<{ 
+    success: boolean; 
+    txHash?: string; 
+    piReturned?: string;
+    feeCollected?: string;
+    error?: string 
+  } | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [showSecretSeedDialog, setShowSecretSeedDialog] = useState(false);
+  const [secretSeedError, setSecretSeedError] = useState<string | null>(null);
 
   const { toast } = useToast();
-  const { retrieveKeypairForTransaction, setError: clearAuthError } = useAuthStore();
+  const { setError: clearAuthError } = useAuthStore();
   const isTestnet = apiClient.isTestnetMode();
 
+  // Get wallet address from authenticated user data (primary source)
+  const userWalletAddress = authUser?.walletAddress && authUser.walletAddress.trim() !== '' 
+    ? authUser.walletAddress 
+    : walletAddress || null;
+
+  // Sync wallet address from authStore to walletStore
   useEffect(() => {
-    if (isAuthenticated && walletAddress) {
-      fetchBalance(walletAddress);
+    if (authUser?.walletAddress && authUser.walletAddress.trim() !== '') {
+      setWalletAddress(authUser.walletAddress);
+    }
+  }, [authUser?.walletAddress, setWalletAddress]);
+
+  useEffect(() => {
+    if (isAuthenticated && userWalletAddress) {
+      fetchBalance(userWalletAddress);
       fetchPiPrice();
     }
-  }, [isAuthenticated, walletAddress, fetchBalance, fetchPiPrice]);
+  }, [isAuthenticated, userWalletAddress, fetchBalance, fetchPiPrice]);
 
   // Calculate Pi output and fees
   const usdpAmount = parseFloat(amount) || 0;
@@ -79,7 +97,7 @@ export default function RedeemPage() {
       return;
     }
 
-    if (!walletAddress) {
+    if (!userWalletAddress) {
       setError('Please connect your wallet');
       return;
     }
@@ -87,37 +105,50 @@ export default function RedeemPage() {
     setShowConfirmation(true);
   };
 
-  const handlePasswordEntered = async (password: string) => {
-    if (!walletAddress) return;
+  const handleSecretSeedEntered = async (secretSeed: string) => {
+    if (!userWalletAddress) return;
 
     setIsLoading(true);
-    setPasswordError(null);
+    setSecretSeedError(null);
     setError(null);
     setTransactionResult(null);
 
     try {
-      const keypair = await retrieveKeypairForTransaction(walletAddress, password);
       const result = await apiClient.redeem({
         amount: usdpAmount,
-        walletAddress: keypair.walletAddress,
-        secretSeed: keypair.secretSeed,
+        walletAddress: userWalletAddress,
+        secretSeed: secretSeed,
       });
 
       if (!result.success) {
         throw new Error(result.error || 'Redeem transaction failed');
       }
 
-      const transactionData = result.data as { success: boolean; txHash?: string; error?: string } | null;
-      setTransactionResult(transactionData || { success: true });
+      // Extract transaction data from backend response
+      const txData = result.data as {
+        transactionHash?: string;
+        usdpBurned?: string;
+        feeCollected?: string;
+        piReturned?: string;
+        usdValue?: number;
+        piPrice?: number;
+      } | null;
+      
+      setTransactionResult({
+        success: true,
+        txHash: txData?.transactionHash || 'N/A',
+        piReturned: txData?.piReturned,
+        feeCollected: txData?.feeCollected,
+      });
       setShowConfirmation(false);
-      setShowPasswordDialog(false);
+      setShowSecretSeedDialog(false);
       
       toast({
         title: 'Redeem Successful',
         description: `Successfully redeemed ${piOutput.toFixed(7)} Pi tokens${isTestnet ? ' on testnet' : ''}`,
       });
 
-      await fetchBalance(walletAddress);
+      await fetchBalance(userWalletAddress);
       setAmount('');
 
     } catch (err) {
@@ -130,29 +161,23 @@ export default function RedeemPage() {
         errorMessage = 'Backend server is not running. Please start the backend server on port 3001.';
       }
       
-      if (errorMessage.includes('PASSWORD_REQUIRED') || errorMessage.includes('Failed to decrypt')) {
-        setPasswordError(errorMessage);
-        throw err; // Re-throw to keep dialog open
-      } else {
-        setError(errorMessage);
-        setShowPasswordDialog(false);
-        toast({
-          title: 'Redeem Failed',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-      }
+      setSecretSeedError(errorMessage);
+      toast({
+        title: 'Redeem Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const confirmRedeem = async () => {
-    if (!walletAddress) return;
-    setShowPasswordDialog(true);
+  const confirmRedeem = () => {
+    if (!userWalletAddress) return;
+    setShowSecretSeedDialog(true);
   };
 
-  if (!isAuthenticated || !walletAddress) {
+  if (!isAuthenticated || !userWalletAddress) {
     return (
       <div className="min-h-screen bg-[#000000] flex items-center justify-center p-4 page-transition">
         <Card className="bg-panel border-[#1C1F25] max-w-md w-full">
@@ -196,11 +221,15 @@ export default function RedeemPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-[#707784]">Pi Received:</span>
-                <span className="font-semibold text-gradient-blue text-lg">{piOutput.toFixed(7)} Pi</span>
+                <span className="font-semibold text-gradient-blue text-lg">
+                  {transactionResult.piReturned ? parseFloat(transactionResult.piReturned).toFixed(7) : piOutput.toFixed(7)} Pi
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-[#707784]">Fee Paid:</span>
-                <span className="text-sm text-[#E9ECEF]">{redeemFee.toFixed(7)} USDP</span>
+                <span className="text-sm text-[#E9ECEF]">
+                  {transactionResult.feeCollected ? parseFloat(transactionResult.feeCollected).toFixed(7) : redeemFee.toFixed(7)} USDP
+                </span>
               </div>
             </div>
             <Button 
@@ -228,29 +257,7 @@ export default function RedeemPage() {
               {error && (
                 <Alert variant="destructive" className="bg-red-950/20 border-red-800">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="space-y-2">
-                    <div>{error}</div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setError(null);
-                        clearAuthError(null);
-                        confirmRedeem();
-                      }}
-                      disabled={isLoading}
-                      className="mt-2"
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Retrying...
-                        </>
-                      ) : (
-                        'Retry Authentication'
-                      )}
-                    </Button>
-                  </AlertDescription>
+                  <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
@@ -276,7 +283,7 @@ export default function RedeemPage() {
               <div className="flex gap-2">
                 <Button 
                   onClick={confirmRedeem} 
-                  disabled={isLoading || showPasswordDialog}
+                  disabled={isLoading || showSecretSeedDialog}
                   className="flex-1 bg-gradient-blue glow-blue-hover btn-press"
                 >
                   {isLoading ? (
@@ -294,7 +301,7 @@ export default function RedeemPage() {
                     setShowConfirmation(false);
                     setError(null);
                     clearAuthError(null);
-                    setShowPasswordDialog(false);
+                    setShowSecretSeedDialog(false);
                   }}
                   disabled={isLoading}
                   className="border-[#1C1F25] text-[#E9ECEF] hover:bg-panel-light"
@@ -306,13 +313,19 @@ export default function RedeemPage() {
           </Card>
         </div>
         
-        {/* Password Prompt Dialog - rendered even when confirmation is shown */}
-        <PasswordPromptDialog
-          open={showPasswordDialog}
-          onOpenChange={setShowPasswordDialog}
-          onPasswordEntered={handlePasswordEntered}
+        {/* Secret Seed Input Dialog */}
+        <SecretSeedInputDialog
+          open={showSecretSeedDialog}
+          onOpenChange={(open) => {
+            setShowSecretSeedDialog(open);
+            if (!open) {
+              setShowConfirmation(false);
+              setSecretSeedError(null);
+            }
+          }}
+          onSecretSeedEntered={handleSecretSeedEntered}
           isLoading={isLoading}
-          error={passwordError}
+          error={secretSeedError}
         />
       </>
     );
@@ -461,13 +474,19 @@ export default function RedeemPage() {
         </Card>
       </div>
 
-      {/* Password Prompt Dialog */}
-      <PasswordPromptDialog
-        open={showPasswordDialog}
-        onOpenChange={setShowPasswordDialog}
-        onPasswordEntered={handlePasswordEntered}
+      {/* Secret Seed Input Dialog */}
+      <SecretSeedInputDialog
+        open={showSecretSeedDialog}
+        onOpenChange={(open) => {
+          setShowSecretSeedDialog(open);
+          if (!open) {
+            setShowConfirmation(false);
+            setSecretSeedError(null);
+          }
+        }}
+        onSecretSeedEntered={handleSecretSeedEntered}
         isLoading={isLoading}
-        error={passwordError}
+        error={secretSeedError}
       />
     </div>
   );

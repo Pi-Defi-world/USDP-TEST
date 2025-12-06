@@ -11,7 +11,7 @@ import { TestnetBadge } from '@/components/TestnetBadge';
 import { ReservePoolBreakdown } from '@/components/ReservePoolBreakdown';
 import { PoolInfoCard } from '@/components/PoolInfoCard';
 import { apiClient } from '@/lib/api/client';
-import { PoolInfo, ReserveStatus, CollateralBreakdown, Stats } from '@/types';
+import { PoolInfo, CollateralBreakdown, Stats } from '@/types';
 import { TrendingUp, DollarSign, Users, Activity, Shield, Zap } from 'lucide-react';
 
 export default function StatsPage() {

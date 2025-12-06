@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/lib/store/authStore';
-import { PasswordPromptDialog } from '@/components/PasswordPromptDialog';
+import { SecretSeedInputDialog } from '@/components/SecretSeedInputDialog';
 import { usePriceStore } from '@/lib/store/priceStore';
 import { useWalletStore } from '@/lib/store/walletStore';
 import { usePi } from '@/components/providers/pi-provider';
@@ -19,27 +19,46 @@ import { cn } from '@/lib/utils';
 
 export default function MintPage() {
   const { isAuthenticated } = usePi();
-  const { walletAddress, balance, fetchBalance } = useWalletStore();
+  const { user: authUser } = useAuthStore();
+  const { walletAddress, balance, fetchBalance, setWalletAddress } = useWalletStore();
   const { piPrice, fetchPiPrice } = usePriceStore();
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [transactionResult, setTransactionResult] = useState<{ success: boolean; txHash?: string; error?: string } | null>(null);
+  const [transactionResult, setTransactionResult] = useState<{ 
+    success: boolean; 
+    txHash?: string; 
+    usdpMinted?: string;
+    feeCollected?: string;
+    error?: string 
+  } | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [showSecretSeedDialog, setShowSecretSeedDialog] = useState(false);
+  const [secretSeedError, setSecretSeedError] = useState<string | null>(null);
   const [selectedSource, setSelectedSource] = useState<'pi' | null>('pi');
 
   const { toast } = useToast();
-  const { retrieveKeypairForTransaction, setError: clearAuthError } = useAuthStore();
+  const { setError: clearAuthError } = useAuthStore();
   const isTestnet = apiClient.isTestnetMode();
 
+  // Get wallet address from authenticated user data (primary source)
+  const userWalletAddress = authUser?.walletAddress && authUser.walletAddress.trim() !== '' 
+    ? authUser.walletAddress 
+    : walletAddress || null;
+
+  // Sync wallet address from authStore to walletStore
   useEffect(() => {
-    if (isAuthenticated && walletAddress) {
-      fetchBalance(walletAddress);
+    if (authUser?.walletAddress && authUser.walletAddress.trim() !== '') {
+      setWalletAddress(authUser.walletAddress);
+    }
+  }, [authUser?.walletAddress, setWalletAddress]);
+
+  useEffect(() => {
+    if (isAuthenticated && userWalletAddress) {
+      fetchBalance(userWalletAddress);
       fetchPiPrice();
     }
-  }, [isAuthenticated, walletAddress, fetchBalance, fetchPiPrice]);
+  }, [isAuthenticated, userWalletAddress, fetchBalance, fetchPiPrice]);
 
   // Calculate USDP output and fees
   const OVERCOLLATERALIZATION_RATIO = 1.15;
@@ -81,7 +100,7 @@ export default function MintPage() {
       return;
     }
 
-    if (!walletAddress) {
+    if (!userWalletAddress) {
       setError('Please connect your wallet');
       return;
     }
@@ -89,37 +108,50 @@ export default function MintPage() {
     setShowConfirmation(true);
   };
 
-  const handlePasswordEntered = async (password: string) => {
-    if (!walletAddress) return;
+  const handleSecretSeedEntered = async (secretSeed: string) => {
+    if (!userWalletAddress) return;
 
     setIsLoading(true);
-    setPasswordError(null);
+    setSecretSeedError(null);
     setError(null);
     setTransactionResult(null);
 
     try {
-      const keypair = await retrieveKeypairForTransaction(walletAddress, password);
       const result = await apiClient.mint({
         amount: piAmount,
-        walletAddress: keypair.walletAddress,
-        secretSeed: keypair.secretSeed,
+        walletAddress: userWalletAddress,
+        secretSeed: secretSeed,
       });
 
       if (!result.success) {
         throw new Error(result.error || 'Mint transaction failed');
       }
 
-      const transactionData = result.data as { success: boolean; txHash?: string; error?: string } | null;
-      setTransactionResult(transactionData || { success: true });
+      // Extract transaction data from backend response
+      const txData = result.data as {
+        transactionHash?: string;
+        usdpMinted?: string;
+        feeCollected?: string;
+        piInput?: string;
+        usdValue?: number;
+        piPrice?: number;
+      } | null;
+      
+      setTransactionResult({
+        success: true,
+        txHash: txData?.transactionHash || 'N/A',
+        usdpMinted: txData?.usdpMinted,
+        feeCollected: txData?.feeCollected,
+      });
       setShowConfirmation(false);
-      setShowPasswordDialog(false);
+      setShowSecretSeedDialog(false);
       
       toast({
         title: 'Mint Successful',
         description: `Successfully minted ${usdpOutput.toFixed(7)} USDP tokens${isTestnet ? ' on testnet' : ''}`,
       });
 
-      await fetchBalance(walletAddress);
+      await fetchBalance(userWalletAddress);
       setAmount('');
 
     } catch (err) {
@@ -132,30 +164,23 @@ export default function MintPage() {
         errorMessage = 'Backend server is not running. Please start the backend server on port 3001.';
       }
       
-      if (errorMessage.includes('PASSWORD_REQUIRED') || errorMessage.includes('Failed to decrypt')) {
-        setPasswordError(errorMessage);
-        throw err; // Re-throw to keep dialog open
-      } else {
-        setError(errorMessage);
-        setShowPasswordDialog(false);
-        toast({
-          title: 'Mint Failed',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-      }
+      setSecretSeedError(errorMessage);
+      toast({
+        title: 'Mint Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const confirmMint = async () => {
-    if (!walletAddress) return;
-    setShowConfirmation(false); // Close confirmation dialog first
-    setShowPasswordDialog(true); // Then open password dialog
+  const confirmMint = () => {
+    if (!userWalletAddress) return;
+    setShowSecretSeedDialog(true);
   };
 
-  if (!isAuthenticated || !walletAddress) {
+  if (!isAuthenticated || !userWalletAddress) {
     return (
       <div className="min-h-screen bg-[#000000] flex items-center justify-center p-4 page-transition">
         <Card className="bg-panel border-[#1C1F25] max-w-md w-full">
@@ -199,11 +224,15 @@ export default function MintPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-[#707784]">USDP Minted:</span>
-                <span className="font-semibold text-gradient-blue text-lg">{usdpOutput.toFixed(7)} USDP</span>
+                <span className="font-semibold text-gradient-blue text-lg">
+                  {transactionResult.usdpMinted ? parseFloat(transactionResult.usdpMinted).toFixed(7) : usdpOutput.toFixed(7)} USDP
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-[#707784]">Fee Paid:</span>
-                <span className="text-sm text-[#E9ECEF]">{mintFee.toFixed(7)} USDP</span>
+                <span className="text-sm text-[#E9ECEF]">
+                  {transactionResult.feeCollected ? parseFloat(transactionResult.feeCollected).toFixed(7) : mintFee.toFixed(7)} USDP
+                </span>
               </div>
             </div>
             <Button 
@@ -295,7 +324,7 @@ export default function MintPage() {
               <div className="flex gap-2">
                 <Button 
                   onClick={confirmMint} 
-                  disabled={isLoading || showPasswordDialog}
+                  disabled={isLoading || showSecretSeedDialog}
                   className="flex-1 bg-gradient-blue glow-blue-hover btn-press"
                 >
                   {isLoading ? (
@@ -313,7 +342,7 @@ export default function MintPage() {
                     setShowConfirmation(false);
                     setError(null);
                     clearAuthError(null);
-                    setShowPasswordDialog(false);
+                    setShowSecretSeedDialog(false);
                   }}
                   disabled={isLoading}
                   className="border-[#1C1F25] text-[#E9ECEF] hover:bg-panel-light"
@@ -325,13 +354,19 @@ export default function MintPage() {
           </Card>
         </div>
         
-        {/* Password Prompt Dialog - rendered even when confirmation is shown */}
-        <PasswordPromptDialog
-          open={showPasswordDialog}
-          onOpenChange={setShowPasswordDialog}
-          onPasswordEntered={handlePasswordEntered}
+        {/* Secret Seed Input Dialog */}
+        <SecretSeedInputDialog
+          open={showSecretSeedDialog}
+          onOpenChange={(open) => {
+            setShowSecretSeedDialog(open);
+            if (!open) {
+              setShowConfirmation(false);
+              setSecretSeedError(null);
+            }
+          }}
+          onSecretSeedEntered={handleSecretSeedEntered}
           isLoading={isLoading}
-          error={passwordError}
+          error={secretSeedError}
         />
       </>
     );
@@ -512,13 +547,19 @@ export default function MintPage() {
         </div>
       </div>
 
-      {/* Password Prompt Dialog */}
-      <PasswordPromptDialog
-        open={showPasswordDialog}
-        onOpenChange={setShowPasswordDialog}
-        onPasswordEntered={handlePasswordEntered}
+      {/* Secret Seed Input Dialog */}
+      <SecretSeedInputDialog
+        open={showSecretSeedDialog}
+        onOpenChange={(open) => {
+          setShowSecretSeedDialog(open);
+          if (!open) {
+            setShowConfirmation(false);
+            setSecretSeedError(null);
+          }
+        }}
+        onSecretSeedEntered={handleSecretSeedEntered}
         isLoading={isLoading}
-        error={passwordError}
+        error={secretSeedError}
       />
     </div>
   );

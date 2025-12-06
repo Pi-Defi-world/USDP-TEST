@@ -46,7 +46,7 @@ function MobileBottomNav() {
     { href: "/mint", icon: Coins, label: "Mint" },
     { href: "/stats", icon: TrendingUp, label: "Stats" },
     { href: "/redeem", icon: ArrowDownCircle, label: "Redeem" },
-    { href: "/transactions", icon: FileText, label: "Transaction" },
+    { href: "/profile", icon: User, label: "Profile" },
   ]
 
   return (
@@ -134,7 +134,7 @@ export function Navbar() {
     { href: "/mint", label: "Mint" },
     { href: "/stats", label: "Stats" },
     { href: "/redeem", label: "Redeem" },
-    { href: "/transactions", label: "Transaction" },
+    { href: "/profile", label: "Profile" },
   ]
 
   // User Menu / Auth Button Component (reusable)

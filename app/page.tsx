@@ -3,8 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { Wallet, Shield, TrendingUp, Zap, Coins, ArrowDownCircle, Check, Globe, Lock, Clock, Users, BarChart3, FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Wallet, TrendingUp, Coins, ArrowDownCircle, Check, Globe, Lock, Clock, BarChart3, FileText } from 'lucide-react';
 
 export default function HomePage() {
   return (
@@ -18,12 +17,11 @@ export default function HomePage() {
               <span className="text-gradient-blue">competitive edge</span>
             </h1>
             <p className="text-lg sm:text-xl text-[#707784] max-w-2xl mx-auto">
-              Join the Pi Network ecosystem building with USDP for near-instant, low-cost, 
-              global stablecoin transactions backed by Pi.
+              Join the only stablecoin that lets Pi Believers earn yield while staying stable and Companies Avoid Pi Volitility and use USDP to transact with confidence all on the Pi Blockchain
             </p>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
               <Button size="lg" asChild className="bg-gradient-blue glow-blue-hover btn-press text-white px-8">
-                <Link href="/mint">Get Started</Link>
+                <Link href="/account-service">Create Wallet</Link>
               </Button>
               <Button size="lg" variant="outline" asChild className="border-[#1C1F25] text-[#E9ECEF] hover:bg-panel-light px-8">
                 <Link href="/stats">View Stats</Link>
@@ -38,9 +36,8 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto text-center space-y-4 mb-16">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#E9ECEF]">
-              USDP is building a new internet financial system, making money movement 
-              around the world as seamless as sending an email.
-            </h2>
+              USDP is building a Safe Heaven for Buisnesses and Companies in Pi Network to store Value, Earn Yields and transact with confidence all on the Pi Blockchain
+            </h2> 
             <p className="text-lg text-[#707784] max-w-3xl mx-auto">
               Powered by Pi Network and trusted by the Pi community, our platform connects 
               traditional finance and digital assets to create a secure, always-on digital 
@@ -49,97 +46,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Key Features - Three Column */}
-      {/* <section className="py-16 lg:py-24 bg-[#000000]">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="bg-panel border-[#1C1F25] hover:border-gradient-blue transition-all">
-              <CardHeader>
-                <div className="h-12 w-12 rounded-full bg-gradient-blue/20 flex items-center justify-center mb-4">
-                  <Wallet className="h-6 w-6 text-gradient-blue" />
-                </div>
-                <CardTitle className="text-[#E9ECEF] text-xl">Pi-Backed Stablecoin</CardTitle>
-                <CardDescription className="text-[#707784]">
-                  The leading digital dollar on Pi Network
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-sm text-[#707784]">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-gradient-blue mt-0.5 flex-shrink-0" />
-                    <span>115% overcollateralization with Pi</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-gradient-blue mt-0.5 flex-shrink-0" />
-                    <span>1:1 USD peg maintained</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-gradient-blue mt-0.5 flex-shrink-0" />
-                    <span>Real-time Pi price integration</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-panel border-[#1C1F25] hover:border-gradient-blue transition-all">
-              <CardHeader>
-                <div className="h-12 w-12 rounded-full bg-gradient-blue/20 flex items-center justify-center mb-4">
-                  <Zap className="h-6 w-6 text-gradient-blue" />
-                </div>
-                <CardTitle className="text-[#E9ECEF] text-xl">Instant Transactions</CardTitle>
-                <CardDescription className="text-[#707784]">
-                  Fast, secure, and always available
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-sm text-[#707784]">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-gradient-blue mt-0.5 flex-shrink-0" />
-                    <span>Real-time settlement, 24/7</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-gradient-blue mt-0.5 flex-shrink-0" />
-                    <span>Move money around the world instantly</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-gradient-blue mt-0.5 flex-shrink-0" />
-                    <span>Low-cost transactions on Pi Network</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-panel border-[#1C1F25] hover:border-gradient-blue transition-all">
-              <CardHeader>
-                <div className="h-12 w-12 rounded-full bg-gradient-blue/20 flex items-center justify-center mb-4">
-                  <Shield className="h-6 w-6 text-gradient-blue" />
-                </div>
-                <CardTitle className="text-[#E9ECEF] text-xl">Secure & Trusted</CardTitle>
-                <CardDescription className="text-[#707784]">
-                  Built on Pi Network blockchain
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-sm text-[#707784]">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-gradient-blue mt-0.5 flex-shrink-0" />
-                    <span>Passkey authentication</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-gradient-blue mt-0.5 flex-shrink-0" />
-                    <span>Multi-signature security</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-gradient-blue mt-0.5 flex-shrink-0" />
-                    <span>Transparent and auditable</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section> */}
 
       {/* Use Cases Section */}
       <section className="py-16 lg:py-24 bg-[#000000]">
@@ -211,11 +117,11 @@ export default function HomePage() {
                   <div className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-gradient-blue mt-0.5 flex-shrink-0" />
                     <span className="text-sm text-[#707784]">
-                      Fully reserved. USDP is backed 100% by Pi collateral.
+                      Fully reserved. USDP is backed by Pi and USDC collateral.
                     </span>
                   </div>
                   <div className="pt-4">
-                    <Link href="/redeem">
+                    <Link href="/stats">
                       <Button variant="outline" className="w-full border-[#1C1F25] text-[#E9ECEF] hover:bg-panel-light">
                         Learn more
                       </Button>
@@ -225,7 +131,7 @@ export default function HomePage() {
               </Card>
 
               {/* Trading Services */}
-              <Card className="bg-panel border-[#1C1F25]">
+              {/* <Card className="bg-panel border-[#1C1F25]">
                 <CardHeader>
                   <CardTitle className="text-[#E9ECEF] flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-gradient-blue" />
@@ -259,7 +165,7 @@ export default function HomePage() {
                     </Link>
                   </div>
                 </CardContent>
-              </Card>
+              </Card> */}
             </div>
           </div>
         </div>
@@ -492,7 +398,7 @@ export default function HomePage() {
             </h2>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Button size="lg" asChild className="bg-gradient-blue glow-blue-hover btn-press text-white px-8">
-                <Link href="/mint">Get Started</Link>
+                <Link href="/account-service">Create Wallet</Link>
               </Button>
               <Button size="lg" variant="outline" asChild className="border-[#1C1F25] text-[#E9ECEF] hover:bg-panel-light px-8">
                 <Link href="/stats">View Stats</Link>
@@ -502,17 +408,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-[#1C1F25] bg-panel mt-12 sm:mt-16 lg:mt-24">
-        <div className="container mx-auto px-4 py-6 sm:py-8">
-          <div className="text-center text-[#707784] text-sm">
-            <p>&copy; 2024 USDP Platform. Built on Pi Network.</p>
-            <p className="mt-2">
-              A production-grade USD-pegged stablecoin powered by Pi Network.
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

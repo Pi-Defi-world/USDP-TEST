@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useAuthStore } from '@/lib/store/authStore';
 
 interface PassphraseVerificationProps {
   username: string;
@@ -62,14 +61,6 @@ export function PassphraseVerification({
         // If walletAddress was provided, verify it matches
         if (walletAddress && verifiedWalletAddress !== walletAddress) {
           setError('Wallet address mismatch. Please check your passphrase.');
-          setIsLoading(false);
-          return;
-        }
-
-        const { reImportWallet } = useAuthStore.getState();
-        const importResult = await reImportWallet(verifiedWalletAddress, normalizedPassphrase);
-        if (!importResult.success) {
-          setError(importResult.error || 'Failed to import wallet to this device');
           setIsLoading(false);
           return;
         }

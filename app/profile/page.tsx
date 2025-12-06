@@ -16,44 +16,45 @@ import {
   Coins,
   Shield,
   Check,
-  ArrowUpCircle,
-  ArrowDownCircle,
 } from 'lucide-react';
 import { usePi } from '@/components/providers/pi-provider';
 import { useWalletStore } from '@/lib/store/walletStore';
+import { useAuthStore } from '@/lib/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PassphraseVerification } from '@/components/PassphraseVerification';
-import { TransactionHistory } from '@/components/TransactionHistory';
-import { AccountServiceCard } from '@/components/AccountServiceCard';
-import { cn } from '@/lib/utils';
-
-const formatDate = (value?: Date | string) => {
-  if (!value) return "Unknown";
-  const date = value instanceof Date ? value : new Date(value);
-  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-};
 
 export default function ProfilePage() {
   const { user, isAuthenticated, authenticate, signOut } = usePi();
-  const { walletAddress, balance, fetchBalance } = useWalletStore();
+  const { user: authUser } = useAuthStore();
+  const { walletAddress, balance, fetchBalance, setWalletAddress } = useWalletStore();
   const { toast } = useToast();
   const [showPassphraseVerification, setShowPassphraseVerification] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Get wallet address from authenticated user data (primary source)
+  const userWalletAddress = authUser?.walletAddress && authUser.walletAddress.trim() !== '' 
+    ? authUser.walletAddress 
+    : walletAddress || null;
+
+  // Sync wallet address from authStore to walletStore
   useEffect(() => {
-    if (isAuthenticated && walletAddress) {
-      fetchBalance(walletAddress);
+    if (authUser?.walletAddress && authUser.walletAddress.trim() !== '') {
+      setWalletAddress(authUser.walletAddress);
     }
-  }, [isAuthenticated, walletAddress, fetchBalance]);
+  }, [authUser?.walletAddress, setWalletAddress]);
+
+  useEffect(() => {
+    if (isAuthenticated && userWalletAddress) {
+      fetchBalance(userWalletAddress);
+    }
+  }, [isAuthenticated, userWalletAddress, fetchBalance]);
 
   const handleCopyWalletAddress = () => {
-    if (walletAddress) {
-      navigator.clipboard.writeText(walletAddress);
+    if (userWalletAddress) {
+      navigator.clipboard.writeText(userWalletAddress);
       setCopied(true);
       toast({ title: "Copied!", description: "Wallet address copied to clipboard" });
       setTimeout(() => setCopied(false), 2000);
@@ -76,7 +77,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePassphraseVerified = (verifiedWalletAddress: string) => {
+  const handlePassphraseVerified = (_verifiedWalletAddress: string) => {
     setShowPassphraseVerification(false);
     toast({
       title: "Wallet Verified",
@@ -85,6 +86,7 @@ export default function ProfilePage() {
   };
 
   const mainNavItems = [
+    { title: "Create Wallet", description: "Generate a new wallet for USDP", icon: Wallet, href: "/account-service", showChevron: true },
     { title: "Mint USDP", description: "Convert Pi to USDP", icon: Coins, href: "/mint", showChevron: true },
     { title: "Burn USDP", description: "Convert USDP to Pi", icon: Wallet, href: "/redeem", showChevron: true },
     { title: "Transactions", description: "View transaction history", icon: FileText, href: "/transactions", showChevron: true },
@@ -92,7 +94,6 @@ export default function ProfilePage() {
   ];
 
   const additionalMenuItems = [
-    { title: "Account Service", description: "Account service information", icon: Shield, href: "/account-service", showChevron: true },
     { title: "Privacy Policy", description: "Learn about our privacy practices", icon: FileText, href: "/privacy", showChevron: true },
     { title: "Contact Us", description: "Get help and support", icon: MessageCircle, href: "/contact", showChevron: true },
   ];
@@ -143,9 +144,29 @@ export default function ProfilePage() {
                 <div className="font-semibold text-lg text-[#E9ECEF] truncate">
                   {isLoading ? "Authenticating..." : user?.username ? `@${user.username}` : "Unauthenticated"}
                 </div>
-                <div className="text-xs text-[#707784]">
-                  {user?.uid ? `ID: ${user.uid.slice(0, 8)}...` : "Not connected"}
-                </div>
+                {userWalletAddress ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="text-xs text-[#707784] font-mono break-all flex-1">
+                      {userWalletAddress}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopyWalletAddress}
+                      className="p-1 h-auto flex-shrink-0"
+                    >
+                      {copied ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4 text-[#707784]" />
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-xs text-[#707784]">
+                    No wallet address. Create a wallet to get started.
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
@@ -198,24 +219,8 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Account Service - Wallet Import */}
-        <div className="mb-6">
-          <AccountServiceCard 
-            onWalletImported={async (walletAddress) => {
-              // Refresh wallet store or update state
-              if (walletAddress) {
-                await fetchBalance(walletAddress);
-                toast({
-                  title: 'Wallet Updated',
-                  description: 'Your wallet has been imported and is ready to use.',
-                });
-              }
-            }}
-          />
-        </div>
-
         {/* Wallet Connection */}
-        {walletAddress && (
+        {userWalletAddress && (
           <Card className="bg-panel border-[#1C1F25] mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-[#E9ECEF]">
@@ -230,7 +235,7 @@ export default function ProfilePage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[#E9ECEF] mb-1">Connected Wallet</p>
                     <p className="text-xs text-[#707784] font-mono break-all">
-                      {walletAddress}
+                      {userWalletAddress}
                     </p>
                   </div>
                   <div className="flex gap-2 ml-4">
@@ -258,27 +263,12 @@ export default function ProfilePage() {
                   <div className="p-4 border border-[#1C1F25] rounded-lg bg-panel-light">
                     <PassphraseVerification
                       username={user.username}
-                      walletAddress={walletAddress}
+                      walletAddress={userWalletAddress}
                       onVerified={handlePassphraseVerified}
                       onCancel={() => setShowPassphraseVerification(false)}
                     />
                   </div>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Transactions */}
-        {walletAddress && (
-          <Card className="bg-panel border-[#1C1F25] mb-6">
-            <CardHeader>
-              <CardTitle className="text-[#E9ECEF]">Recent Transactions</CardTitle>
-              <CardDescription className="text-[#707784]">Your latest USDP operations</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="max-h-[400px] overflow-y-auto">
-                <TransactionHistory walletAddress={walletAddress} />
               </div>
             </CardContent>
           </Card>

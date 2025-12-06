@@ -12,7 +12,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { useWalletStore } from '@/lib/store/walletStore';
 import { generateAesKey, aesEncrypt, exportCryptoKey } from '@/lib/crypto/client-crypto';
 import { idbSet, STORES } from '@/lib/storage/idb';
-import { PasswordSetupDialog } from '@/components/PasswordSetupDialog';
+// PasswordSetupDialog removed - no longer needed with secret seed based authentication
 
 interface AccountServiceCardProps {
   onWalletImported?: (walletAddress: string) => void;
@@ -26,7 +26,6 @@ export function AccountServiceCard({ onWalletImported }: AccountServiceCardProps
   const [error, setError] = useState<string | null>(null);
   const [derivedWallet, setDerivedWallet] = useState<{ walletAddress: string; secretSeed: string } | null>(null);
   const [copied, setCopied] = useState(false);
-  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuthStore();
   const { setWalletAddress, fetchBalance } = useWalletStore();
@@ -75,7 +74,6 @@ export function AccountServiceCard({ onWalletImported }: AccountServiceCardProps
           walletAddress: data.publicKey,
           secretSeed: data.secret,
         });
-        setShowPasswordDialog(true);
         toast({
           title: 'Wallet Derived Successfully',
           description: 'Please set a PIN/password to encrypt and store your wallet.',
@@ -96,9 +94,10 @@ export function AccountServiceCard({ onWalletImported }: AccountServiceCardProps
     }
   };
 
-  const handlePasswordSet = async (password: string) => {
+  // Auto-encrypt and store wallet after derivation
+  const handleWalletDerived = async () => {
     if (!derivedWallet) {
-      throw new Error('Wallet not derived. Please import wallet first.');
+      return;
     }
 
     setIsLoading(true);
@@ -149,18 +148,7 @@ export function AccountServiceCard({ onWalletImported }: AccountServiceCardProps
       });
       await idbSet(STORES.AES_KEYS, walletAddress, Array.from(rawAesKey));
 
-      // If user is authenticated, also store server-side encrypted secret
-      if (isAuthenticated && user?.id && passphrase.trim()) {
-        try {
-          const { storeEncryptedSecret } = useAuthStore.getState();
-          await storeEncryptedSecret(user.id, walletAddress, normalizeMnemonic(passphrase), password);
-        } catch (err) {
-          console.warn('Failed to store server-side encrypted secret:', err);
-        }
-      }
-
       setStep('complete');
-      setShowPasswordDialog(false);
       
       // Update wallet store
       setWalletAddress(walletAddress);
@@ -212,7 +200,6 @@ export function AccountServiceCard({ onWalletImported }: AccountServiceCardProps
     setStep('import');
     setDerivedWallet(null);
     setError(null);
-    setShowPasswordDialog(false);
   };
 
   return (
@@ -351,11 +338,11 @@ export function AccountServiceCard({ onWalletImported }: AccountServiceCardProps
                 Your wallet is now encrypted and stored. The secret seed is encrypted and stored locally.
                 {isAuthenticated && user?.id && (
                   <span className="block mt-1">
-                    ✓ Wallet linked to your account ({user.piUsername || user.id})
+                    Wallet linked to your account ({user.piUsername || user.id})
                     <br />
-                    ✓ Encrypted wallet stored server-side for backup
+                    Encrypted wallet stored server-side for backup
                     <br />
-                    ✓ Ready for mint, redeem, and other transactions
+                    Ready for mint, redeem, and other transactions
                   </span>
                 )}
               </AlertDescription>
@@ -372,19 +359,8 @@ export function AccountServiceCard({ onWalletImported }: AccountServiceCardProps
         )}
       </CardContent>
 
-      {/* Password Setup Dialog */}
-      <PasswordSetupDialog
-        open={showPasswordDialog}
-        onOpenChange={(open) => {
-          if (!open && !isLoading) {
-            // If dialog is closed and not loading, reset to import step
-            handleReset();
-          }
-          setShowPasswordDialog(open);
-        }}
-        onPasswordSet={handlePasswordSet}
-        isLoading={isLoading}
-      />
+      {/* Account import functionality hidden from UI - kept for internal use only */}
+      {/* Password dialogs removed - using secret seed based authentication instead */}
     </Card>
   );
 }

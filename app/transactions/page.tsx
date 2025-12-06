@@ -8,18 +8,32 @@ import { apiClient } from '@/lib/api/client';
 import { TransactionHistoryItem } from '@/types';
 import { ArrowUpCircle, ArrowDownCircle, Link2, RefreshCw, CheckCircle2, XCircle, FileText } from 'lucide-react';
 import { usePi } from '@/components/providers/pi-provider';
+import { useAuthStore } from '@/lib/store/authStore';
 import { useWalletStore } from '@/lib/store/walletStore';
 import { cn } from '@/lib/utils';
 
 export default function TransactionsPage() {
   const { isAuthenticated } = usePi();
-  const { walletAddress } = useWalletStore();
+  const { user: authUser } = useAuthStore();
+  const { walletAddress, setWalletAddress } = useWalletStore();
   const [transactions, setTransactions] = useState<TransactionHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Get wallet address from authenticated user data (primary source)
+  const userWalletAddress = authUser?.walletAddress && authUser.walletAddress.trim() !== '' 
+    ? authUser.walletAddress 
+    : walletAddress || null;
+
+  // Sync wallet address from authStore to walletStore
+  useEffect(() => {
+    if (authUser?.walletAddress && authUser.walletAddress.trim() !== '') {
+      setWalletAddress(authUser.walletAddress);
+    }
+  }, [authUser?.walletAddress, setWalletAddress]);
+
   const fetchHistory = useCallback(async () => {
-    if (!walletAddress) {
+    if (!userWalletAddress) {
       setError('Wallet address is required to fetch transaction history');
       setIsLoading(false);
       return;
@@ -28,7 +42,7 @@ export default function TransactionsPage() {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await apiClient.getTransactionHistory(50, walletAddress);
+      const response = await apiClient.getTransactionHistory(50, userWalletAddress);
       
       if (response.success && response.data) {
         const data = response.data as { transactions: TransactionHistoryItem[]; count: number };
@@ -51,13 +65,13 @@ export default function TransactionsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [walletAddress]);
+  }, [userWalletAddress]);
 
   useEffect(() => {
-    if (isAuthenticated && walletAddress) {
+    if (isAuthenticated && userWalletAddress) {
       fetchHistory();
     }
-  }, [isAuthenticated, walletAddress, fetchHistory]);
+  }, [isAuthenticated, userWalletAddress, fetchHistory]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -114,7 +128,7 @@ export default function TransactionsPage() {
     );
   }
 
-  if (!walletAddress) {
+  if (!userWalletAddress) {
     return (
       <div className="min-h-screen bg-[#000000] flex items-center justify-center p-4 page-transition">
         <Card className="bg-panel border-[#1C1F25] max-w-md w-full">

@@ -12,6 +12,7 @@ import { usePriceStore } from '@/lib/store/priceStore';
 import { useWalletStore } from '@/lib/store/walletStore';
 import { apiClient } from '@/lib/api/client';
 import { TestnetBadge } from '@/components/TestnetBadge';
+import { SecretSeedInputDialog } from '@/components/SecretSeedInputDialog';
 import { Loader2, Calculator, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface RedeemFormProps {
@@ -25,9 +26,11 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
   const [error, setError] = useState<string | null>(null);
   const [transactionResult, setTransactionResult] = useState<{ success: boolean; txHash?: string; error?: string } | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showSecretSeedDialog, setShowSecretSeedDialog] = useState(false);
+  const [secretSeedError, setSecretSeedError] = useState<string | null>(null);
 
   const { toast } = useToast();
-  const { retrieveKeypairForTransaction, setError: clearAuthError } = useAuthStore();
+  const { setError: clearAuthError } = useAuthStore();
   const { piPrice } = usePriceStore();
   const { balance } = useWalletStore();
   const isTestnet = apiClient.isTestnetMode();
@@ -67,20 +70,18 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
     setShowConfirmation(true);
   };
 
-  const confirmRedeem = async () => {
+  const handleSecretSeedEntered = async (secretSeed: string) => {
     setIsLoading(true);
     setError(null);
+    setSecretSeedError(null);
     setTransactionResult(null);
 
     try {
-      // Retrieve keypair using passkey authentication
-      const keypair = await retrieveKeypairForTransaction(walletAddress);
-      
-      // Call redeem API with keypair data using apiClient (includes Authorization header)
+      // Call redeem API with secret seed directly
       const result = await apiClient.redeem({
         amount: usdpAmount,
-        walletAddress: keypair.walletAddress,
-        secretSeed: keypair.secretSeed,
+        walletAddress: walletAddress,
+        secretSeed: secretSeed,
       });
 
       if (!result.success) {
@@ -90,6 +91,7 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
       const transactionData = result.data as { success: boolean; txHash?: string; error?: string } | null;
       setTransactionResult(transactionData || { success: true });
       setShowConfirmation(false);
+      setShowSecretSeedDialog(false);
       
       toast({
         title: 'Redeem Successful',
@@ -103,7 +105,7 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Redeem transaction failed';
-      setError(errorMessage);
+      setSecretSeedError(errorMessage);
       
       toast({
         title: 'Redeem Failed',
@@ -113,6 +115,11 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const confirmRedeem = () => {
+    // After confirmation, show secret seed dialog
+    setShowSecretSeedDialog(true);
   };
 
   const handleRetry = () => {
@@ -163,29 +170,7 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="space-y-2">
-                <div>{error}</div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setError(null);
-                    clearAuthError(null);
-                    confirmRedeem();
-                  }}
-                  disabled={isLoading}
-                  className="mt-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Retrying...
-                    </>
-                  ) : (
-                    'Retry Authentication'
-                  )}
-                </Button>
-              </AlertDescription>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
@@ -348,6 +333,21 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
           </Alert>
         )}
       </CardContent>
+      
+      {/* Secret Seed Input Dialog */}
+      <SecretSeedInputDialog
+        open={showSecretSeedDialog}
+        onOpenChange={(open) => {
+          setShowSecretSeedDialog(open);
+          if (!open) {
+            setShowConfirmation(false);
+            setSecretSeedError(null);
+          }
+        }}
+        onSecretSeedEntered={handleSecretSeedEntered}
+        isLoading={isLoading}
+        error={secretSeedError}
+      />
     </Card>
   );
 }

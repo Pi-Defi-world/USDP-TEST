@@ -245,11 +245,24 @@ class ApiClient {
     });
   }
 
-  // Wallet Import
+  // Wallet Import (deprecated - kept for internal use)
   async importWallet(userId: string, mnemonic: string) {
     return this.request('/auth/import-wallet', {
       method: 'POST',
       body: JSON.stringify({ userId, mnemonic }),
+    });
+  }
+
+  // Wallet Generation
+  async generateWallet() {
+    return this.request('/account/generate', {
+      method: 'POST',
+    });
+  }
+
+  async createNewWallet() {
+    return this.request('/account/create-new-wallet', {
+      method: 'POST',
     });
   }
 
@@ -289,17 +302,15 @@ class ApiClient {
   }
 
   async getCurrentUser() {
-    // If using Pi access token (no JWT), include walletAddress from localStorage if available
     const authToken = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     const piUser = typeof window !== 'undefined' ? localStorage.getItem('pi_user') : null;
     
-    // If no JWT token but we have Pi user data, include walletAddress in request body
     if (!authToken && piUser) {
       try {
         const userData = JSON.parse(piUser);
         if (userData.wallet_address) {
           return this.request('/auth/me', {
-            method: 'POST', // Use POST to send body
+            method: 'POST',
             body: JSON.stringify({ walletAddress: userData.wallet_address }),
           });
         }
