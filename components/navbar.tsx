@@ -184,8 +184,8 @@ export function Navbar() {
           size="sm" 
           className="gap-2 bg-gradient-blue hover:opacity-90 text-white"
         >
-          <Wallet className="h-4 w-4" />
-          <span className="text-sm hidden sm:inline">
+          <Wallet className="h-4 w-4 flex-shrink-0" />
+          <span className="text-sm whitespace-nowrap">
             {authLoading ? 'Connecting...' : 'Connect Pi'}
           </span>
         </Button>

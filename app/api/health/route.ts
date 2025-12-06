@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
 import { ApiResponse } from '@/types';
-
-const SERVER_API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
+import { getBackendUrl } from '@/lib/config/api-config';
 
 export async function GET() {
   try {
-    const response = await fetch(`${SERVER_API_URL}/api/health`);
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/health`);
     const data = await response.json();
     
     return NextResponse.json(data, { status: response.status });

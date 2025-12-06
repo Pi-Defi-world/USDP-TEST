@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL ;
+import { getBackendUrl } from '@/lib/config/api-config';
 
 // POST /api/auth/login-passkey - Proxy to backend server
 export async function POST(request: NextRequest) {
@@ -27,7 +26,8 @@ export async function POST(request: NextRequest) {
       headers['referer'] = refererHeader || origin;
     }
     
-    const response = await fetch(`${BACKEND_URL}/api/auth/login-passkey`, {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/auth/login-passkey`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
@@ -71,7 +71,8 @@ export async function PUT(request: NextRequest) {
       headers['referer'] = refererHeader || origin;
     }
     
-    const response = await fetch(`${BACKEND_URL}/api/auth/login-passkey`, {
+    const backendUrl = getBackendUrl();
+    const response = await fetch(`${backendUrl}/api/auth/login-passkey`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(body),
