@@ -34,7 +34,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Get wallet address from authenticated user data (primary source)
+
   const userWalletAddress = authUser?.walletAddress && authUser.walletAddress.trim() !== '' 
     ? authUser.walletAddress 
     : walletAddress || null;
