@@ -77,7 +77,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePassphraseVerified = (_verifiedWalletAddress: string) => {
+  const handlePassphraseVerified = (_walletAddress: string) => {
     setShowPassphraseVerification(false);
     toast({
       title: "Wallet Verified",

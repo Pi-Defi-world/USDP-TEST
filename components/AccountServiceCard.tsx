@@ -9,9 +9,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Key, Copy, Check, AlertCircle, Loader2, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useWalletStore } from '@/lib/store/walletStore';
-import { generateAesKey, aesEncrypt, exportCryptoKey } from '@/lib/crypto/client-crypto';
-import { idbSet, STORES } from '@/lib/storage/idb';
 // PasswordSetupDialog removed - no longer needed with secret seed based authentication
 
 interface AccountServiceCardProps {
