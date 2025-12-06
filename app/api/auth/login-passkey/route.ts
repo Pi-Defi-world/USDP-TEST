@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendUrl } from '@/lib/config/api-config';
+import { fetchWithTimeout } from '@/lib/api/fetch-with-timeout';
 
 // POST /api/auth/login-passkey - Proxy to backend server
 export async function POST(request: NextRequest) {
@@ -27,20 +28,26 @@ export async function POST(request: NextRequest) {
     }
     
     const backendUrl = getBackendUrl();
-    const response = await fetch(`${backendUrl}/api/auth/login-passkey`, {
+    console.log('[API Route] Auth/login-passkey - Backend URL:', backendUrl);
+    
+    const response = await fetchWithTimeout(`${backendUrl}/api/auth/login-passkey`, {
       method: 'POST',
       headers,
       body: JSON.stringify(body),
+      timeout: 30000,
     });
+    
+    console.log('[API Route] Auth/login-passkey - Response status:', response.status);
     
     const data = await response.json();
     
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Login proxy error:', error);
+    console.error('[API Route] Auth/login-passkey - Proxy error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({
       success: false,
-      error: 'Internal server error',
+      error: errorMessage,
       timestamp: new Date().toISOString(),
     }, { status: 500 });
   }
@@ -72,17 +79,22 @@ export async function PUT(request: NextRequest) {
     }
     
     const backendUrl = getBackendUrl();
-    const response = await fetch(`${backendUrl}/api/auth/login-passkey`, {
+    console.log('[API Route] Auth/login-passkey (PUT) - Backend URL:', backendUrl);
+    
+    const response = await fetchWithTimeout(`${backendUrl}/api/auth/login-passkey`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(body),
+      timeout: 30000,
     });
+    
+    console.log('[API Route] Auth/login-passkey (PUT) - Response status:', response.status);
     
     const data = await response.json();
     
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Login verification proxy error:', error);
+    console.error('[API Route] Auth/login-passkey (PUT) - Proxy error:', error);
     return NextResponse.json({
       success: false,
       error: 'Internal server error',

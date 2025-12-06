@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getBackendUrl } from '@/lib/config/api-config';
-
-/**
- * Debug endpoint to check API configuration
- * GET /api/debug - Returns configuration status
- * 
- * For comprehensive connection testing, use /api/test-connection instead
- */
+ 
 export async function GET() {
   try {
     const config = {
