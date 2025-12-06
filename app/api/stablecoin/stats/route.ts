@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server';
 import { ApiResponse } from '@/types';
 import { getBackendUrl } from '@/lib/config/api-config';
+import { fetchWithTimeout } from '@/lib/api/fetch-with-timeout';
 
 export async function GET() {
   try {
     const backendUrl = getBackendUrl();
-    const response = await fetch(`${backendUrl}/api/health/stats`);
+    const response = await fetchWithTimeout(`${backendUrl}/api/health/stats`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      timeout: 30000,
+    });
     const data = await response.json();
     
     // Add testnet flag to response if successful

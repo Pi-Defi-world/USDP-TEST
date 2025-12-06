@@ -1,21 +1,24 @@
 import { NextResponse } from 'next/server';
 import { ApiResponse } from '@/types';
 import { getBackendUrl } from '@/lib/config/api-config';
+import { fetchWithTimeout } from '@/lib/api/fetch-with-timeout';
 
 export async function GET() {
   try {
     const backendUrl = getBackendUrl();
     console.log('[API Route] Health check - Backend URL:', backendUrl);
+    console.log('[API Route] SERVER_URL:', process.env.SERVER_URL || 'NOT SET');
     console.log('[API Route] NEXT_PUBLIC_SERVER_URL:', process.env.NEXT_PUBLIC_SERVER_URL || 'NOT SET');
     
     const healthUrl = `${backendUrl}/api/health`;
     console.log('[API Route] Fetching from:', healthUrl);
     
-    const response = await fetch(healthUrl, {
+    const response = await fetchWithTimeout(healthUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
+      timeout: 10000,
     });
     
     console.log('[API Route] Response status:', response.status);
@@ -42,8 +45,10 @@ export async function GET() {
       error: errorMessage,
       timestamp: new Date().toISOString(),
       debug: {
-        backendUrl: process.env.NEXT_PUBLIC_SERVER_URL || 'NOT SET',
+        serverUrl: process.env.SERVER_URL || 'NOT SET',
+        nextPublicServerUrl: process.env.NEXT_PUBLIC_SERVER_URL || 'NOT SET',
         nodeEnv: process.env.NODE_ENV,
+        note: 'Set SERVER_URL (runtime) or NEXT_PUBLIC_SERVER_URL (build-time)',
       },
     } as ApiResponse & { debug?: any }, { status: 500 });
   }

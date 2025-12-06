@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendUrl } from '@/lib/config/api-config';
+import { fetchWithTimeout } from '@/lib/api/fetch-with-timeout';
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,9 +34,11 @@ export async function GET(request: NextRequest) {
     }
     
     const backendUrl = getBackendUrl();
-    const response = await fetch(`${backendUrl}/api/auth/me`, {
+    console.log('[API Route] Auth/me - Backend URL:', backendUrl);
+    const response = await fetchWithTimeout(`${backendUrl}/api/auth/me`, {
       method: 'GET',
       headers,
+      timeout: 30000,
     });
     
     const data = await response.json();
@@ -43,9 +46,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('Get current user proxy error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json({
       success: false,
-      error: 'Internal server error',
+      error: errorMessage,
       timestamp: new Date().toISOString(),
     }, { status: 500 });
   }

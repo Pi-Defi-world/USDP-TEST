@@ -5,16 +5,20 @@
 
 /**
  * Get the backend server URL
- * In production, this MUST be set via NEXT_PUBLIC_SERVER_URL
- * Falls back to /api for Next.js API routes (development)
+ * Supports both build-time (NEXT_PUBLIC_SERVER_URL) and runtime (SERVER_URL) variables
+ * NEXT_PUBLIC_* variables are embedded at build time, SERVER_URL works at runtime
  */
 export function getBackendUrl(): string {
-  // In production, NEXT_PUBLIC_SERVER_URL must be set
-  const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
-  
-  if (serverUrl) {
-    // Remove trailing slash if present
-    return serverUrl.replace(/\/$/, '');
+  // Try runtime variable first (works without rebuild)
+  const runtimeUrl = process.env.SERVER_URL;
+  if (runtimeUrl) {
+    return runtimeUrl.replace(/\/$/, '');
+  }
+
+  // Try build-time variable (requires rebuild after setting)
+  const buildTimeUrl = process.env.NEXT_PUBLIC_SERVER_URL;
+  if (buildTimeUrl) {
+    return buildTimeUrl.replace(/\/$/, '');
   }
 
   // For client-side requests, use relative /api path (Next.js API routes)
@@ -29,9 +33,11 @@ export function getBackendUrl(): string {
 
   // Production server-side: fail if not configured
   throw new Error(
-    'NEXT_PUBLIC_SERVER_URL environment variable is required in production. ' +
-    'Please set it to your backend server URL (e.g., https://api.yourdomain.com). ' +
-    'This variable should be set in your deployment platform (Vercel, etc.) environment settings.'
+    'Backend URL is not configured. Please set either:\n' +
+    '  - SERVER_URL (runtime, no rebuild needed) OR\n' +
+    '  - NEXT_PUBLIC_SERVER_URL (build-time, requires rebuild)\n' +
+    'Set it to your backend server URL (e.g., https://api.yourdomain.com).\n' +
+    'In Vercel: Project Settings → Environment Variables → Add variable → Redeploy'
   );
 }
 
