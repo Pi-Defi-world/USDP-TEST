@@ -149,9 +149,9 @@ export function Navbar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="gap-2 bg-transparent">
-              <User className="h-4 w-4" />
-              <span className="text-sm max-w-[120px] truncate hidden sm:inline">
-                {user?.username || 'User'}
+              <User className="h-4 w-4 flex-shrink-0" />
+              <span className="text-sm max-w-[120px] truncate whitespace-nowrap">
+                {user?.username ? `@${user.username}` : 'User'}
               </span>
             </Button>
           </DropdownMenuTrigger>

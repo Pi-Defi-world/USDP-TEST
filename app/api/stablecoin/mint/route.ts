@@ -7,7 +7,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const backendUrl = getBackendUrl();
-    const response = await fetch(`${backendUrl}/api/stablecoin/mint`, {
+    console.log('[API Route] Mint - Backend URL:', backendUrl);
+    console.log('[API Route] NEXT_PUBLIC_SERVER_URL:', process.env.NEXT_PUBLIC_SERVER_URL || 'NOT SET');
+    
+    const mintUrl = `${backendUrl}/api/stablecoin/mint`;
+    console.log('[API Route] Fetching from:', mintUrl);
+    
+    const response = await fetch(mintUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
