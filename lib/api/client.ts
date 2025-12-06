@@ -218,12 +218,14 @@ class ApiClient {
 
   // Wallet Generation
   async generateWallet() {
+    // Use Next.js API route proxy to ensure proper JSON error handling
     return this.request('/account/generate', {
       method: 'POST',
     });
   }
 
   async createNewWallet() {
+    // Use Next.js API route proxy to ensure proper JSON error handling
     return this.request('/account/create-new-wallet', {
       method: 'POST',
     });

@@ -1,3 +1,8 @@
+/**
+ * @deprecated This component is deprecated and should not be used in the frontend.
+ * Passphrase/mnemonic import functionality has been removed from user-facing features.
+ * This component is kept for internal/backup use only.
+ */
 'use client';
 
 import { useState } from 'react';
@@ -15,6 +20,10 @@ interface AccountServiceCardProps {
   onWalletImported?: (walletAddress: string) => void;
 }
 
+/**
+ * @deprecated This component is deprecated and should not be used in the frontend.
+ * Passphrase/mnemonic import functionality has been removed from user-facing features.
+ */
 export function AccountServiceCard({ onWalletImported: _onWalletImported }: AccountServiceCardProps) {
   const [passphrase, setPassphrase] = useState('');
   const [secretKey, setSecretKey] = useState('');

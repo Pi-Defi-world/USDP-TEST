@@ -13,7 +13,6 @@ import {
   User,
   Wallet,
   Coins,
-  Shield,
   Check,
 } from 'lucide-react';
 import { usePi } from '@/components/providers/pi-provider';
@@ -22,14 +21,12 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { PassphraseVerification } from '@/components/PassphraseVerification';
 
 export default function ProfilePage() {
   const { user, isAuthenticated, signOut } = usePi();
   const { user: authUser } = useAuthStore();
   const { walletAddress, balance, fetchBalance, setWalletAddress } = useWalletStore();
   const { toast } = useToast();
-  const [showPassphraseVerification, setShowPassphraseVerification] = useState(false);
   const [copied, setCopied] = useState(false);
 
 
@@ -59,14 +56,6 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePassphraseVerified = (_walletAddress: string) => {
-    // Wallet address is provided by PassphraseVerification but not needed here
-    setShowPassphraseVerification(false);
-    toast({
-      title: "Wallet Verified",
-      description: "Your wallet has been successfully verified",
-    });
-  };
 
   const mainNavItems = [
     { title: "Create Wallet", description: "Generate a new wallet for USDP", icon: Wallet, href: "/account-service", showChevron: true },
@@ -229,26 +218,6 @@ export default function ProfilePage() {
                     </Button>
                   </div>
                 </div>
-                {!showPassphraseVerification && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowPassphraseVerification(true)}
-                    className="w-full border-[#1C1F25] text-[#E9ECEF] hover:bg-panel-light"
-                  >
-                    <Shield className="mr-2 h-4 w-4" />
-                    Verify Passphrase
-                  </Button>
-                )}
-                {showPassphraseVerification && user?.username && (
-                  <div className="p-4 border border-[#1C1F25] rounded-lg bg-panel-light">
-                    <PassphraseVerification
-                      username={user.username}
-                      walletAddress={userWalletAddress}
-                      onVerified={handlePassphraseVerified}
-                      onCancel={() => setShowPassphraseVerification(false)}
-                    />
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
