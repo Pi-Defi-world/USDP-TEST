@@ -135,7 +135,7 @@ class ApiClient {
       let data;
       try {
         data = await response.json();
-      } catch (jsonError) {
+      } catch {
         const text = await response.text().catch(() => 'Unable to read response');
         const error = new Error(
           `Invalid JSON response from server. Status: ${response.status}. Response: ${text.substring(0, 200)}`

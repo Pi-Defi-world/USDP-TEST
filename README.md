@@ -253,10 +253,8 @@ usdp-platform/
 ## 📊 API Endpoints
 
 ### Authentication
-- `POST /api/auth/register-passkey` - Start passkey registration
-- `PUT /api/auth/verify-registration` - Verify passkey registration
-- `POST /api/auth/login-passkey` - Start passkey authentication
-- `PUT /api/auth/verify-login` - Verify passkey authentication
+- `POST /api/auth/signin` - Sign in with Pi Network authentication
+- `GET /api/auth/me` - Get current authenticated user
 
 ### Stablecoin Operations
 - `POST /api/stablecoin/mint` - Mint USDP tokens
