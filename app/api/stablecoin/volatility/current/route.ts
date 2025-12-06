@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiResponse } from '@/types';
 
-const SERVER_API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
-
 export async function GET(request: NextRequest) {
   try {
+    const backendUrl = (process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || '').replace(/\/$/, '');
+    if (!backendUrl) {
+      return NextResponse.json<ApiResponse>({
+        success: false,
+        error: 'Backend URL not configured. Set SERVER_URL or NEXT_PUBLIC_SERVER_URL',
+        timestamp: new Date().toISOString(),
+      }, { status: 500 });
+    }
+    
     const token = request.headers.get('authorization');
     
     const headers: Record<string, string> = {
@@ -15,7 +22,7 @@ export async function GET(request: NextRequest) {
       headers['Authorization'] = token;
     }
 
-    const response = await fetch(`${SERVER_API_URL}/api/stablecoin/volatility/current`, {
+    const response = await fetch(`${backendUrl}/api/stablecoin/volatility/current`, {
       method: 'GET',
       headers,
     });

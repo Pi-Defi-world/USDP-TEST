@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiResponse } from '@/types';
 
-const SERVER_API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
-
 export async function GET(request: NextRequest) {
   try {
+    const backendUrl = (process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || '').replace(/\/$/, '');
+    if (!backendUrl) {
+      return NextResponse.json<ApiResponse>({
+        success: false,
+        error: 'Backend URL not configured. Set SERVER_URL or NEXT_PUBLIC_SERVER_URL',
+        timestamp: new Date().toISOString(),
+      }, { status: 500 });
+    }
+    
     const { searchParams } = new URL(request.url);
     const address = searchParams.get('address');
     
@@ -16,7 +23,7 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
     
-    const response = await fetch(`${SERVER_API_URL}/api/balance/enhanced/${address}`);
+    const response = await fetch(`${backendUrl}/api/balance/enhanced/${address}`);
     const data = await response.json();
     
     return NextResponse.json(data, { status: response.status });

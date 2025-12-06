@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ApiResponse } from '@/types';
 
-const SERVER_API_URL = process.env.NEXT_PUBLIC_SERVER_URL;
-
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const backendUrl = (process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || '').replace(/\/$/, '');
+    if (!backendUrl) {
+      return NextResponse.json<ApiResponse>({
+        success: false,
+        error: 'Backend URL not configured. Set SERVER_URL or NEXT_PUBLIC_SERVER_URL',
+        timestamp: new Date().toISOString(),
+      }, { status: 500 });
+    }
+    
     const { id } = await params;
     const token = request.headers.get('authorization');
     
@@ -19,7 +26,7 @@ export async function POST(
       headers['Authorization'] = token;
     }
 
-    const response = await fetch(`${SERVER_API_URL}/api/stablecoin/notifications/${id}/read`, {
+    const response = await fetch(`${backendUrl}/api/stablecoin/notifications/${id}/read`, {
       method: 'POST',
       headers,
     });

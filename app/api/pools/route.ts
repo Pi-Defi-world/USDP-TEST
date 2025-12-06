@@ -36,6 +36,15 @@ export async function GET(request: NextRequest) {
 // POST /api/pools/create - Proxy to server
 export async function POST(request: NextRequest) {
   try {
+    const backendUrl = (process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || '').replace(/\/$/, '');
+    if (!backendUrl) {
+      return NextResponse.json<ApiResponse>({
+        success: false,
+        error: 'Backend URL not configured. Set SERVER_URL or NEXT_PUBLIC_SERVER_URL',
+        timestamp: new Date().toISOString(),
+      }, { status: 500 });
+    }
+    
     const body = await request.json();
 
     // Proxy to server pool creation endpoint
@@ -64,6 +73,15 @@ export async function POST(request: NextRequest) {
 // PUT /api/pools/trade - Proxy to server
 export async function PUT(request: NextRequest) {
   try {
+    const backendUrl = (process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL || '').replace(/\/$/, '');
+    if (!backendUrl) {
+      return NextResponse.json<ApiResponse>({
+        success: false,
+        error: 'Backend URL not configured. Set SERVER_URL or NEXT_PUBLIC_SERVER_URL',
+        timestamp: new Date().toISOString(),
+      }, { status: 500 });
+    }
+    
     const body = await request.json();
 
     // Proxy to server pool trade endpoint
