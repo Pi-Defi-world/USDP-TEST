@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Home, TrendingUp, User, LogOut, Wallet, Coins, ArrowDownCircle, FileText } from "lucide-react"
+import { Home, TrendingUp, User, LogOut, Wallet, Coins, ArrowDownCircle } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePi } from "@/components/providers/pi-provider"
