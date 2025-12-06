@@ -43,7 +43,7 @@ export function PiProvider({ children }: { children: ReactNode }) {
         try {
           window.Pi.init({ 
             version: "2.0", 
-            sandbox: true
+            // sandbox: true
           })
           console.log("Pi SDK initialized")
           // Wait a bit for the iframe to be ready

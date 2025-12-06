@@ -26,12 +26,11 @@ import { useToast } from '@/hooks/use-toast';
 import { PassphraseVerification } from '@/components/PassphraseVerification';
 
 export default function ProfilePage() {
-  const { user, isAuthenticated, authenticate, signOut } = usePi();
+  const { user, isAuthenticated, signOut } = usePi();
   const { user: authUser } = useAuthStore();
   const { walletAddress, balance, fetchBalance, setWalletAddress } = useWalletStore();
   const { toast } = useToast();
   const [showPassphraseVerification, setShowPassphraseVerification] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
 
@@ -58,22 +57,6 @@ export default function ProfilePage() {
       setCopied(true);
       toast({ title: "Copied!", description: "Wallet address copied to clipboard" });
       setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handlePiConnect = async () => {
-    setIsLoading(true);
-    try {
-      await authenticate();
-    } catch (error) {
-      console.error("Pi authentication failed:", error);
-      toast({
-        title: "Authentication Failed",
-        description: "Please try again",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -107,16 +90,16 @@ export default function ProfilePage() {
       <div className="container mx-auto px-4 py-6 sm:py-8 max-w-2xl">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold text-[#E9ECEF]">Profile</h1>
-          {!isAuthenticated && (
-            <Button 
-              size="sm" 
-              onClick={handlePiConnect} 
-              disabled={isLoading}
-              className="bg-gradient-blue glow-blue-hover btn-press"
-            >
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wallet className="mr-2 h-4 w-4" />}
-              Connect Pi
-            </Button>
+          {!userWalletAddress && (
+            <Link href="/account-service">
+              <Button 
+                size="sm" 
+                className="bg-gradient-blue glow-blue-hover btn-press"
+              >
+                <Wallet className="mr-2 h-4 w-4" />
+                Create Wallet
+              </Button>
+            </Link>
           )}
         </div>
 
@@ -142,7 +125,7 @@ export default function ProfilePage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-lg text-[#E9ECEF] truncate">
-                  {isLoading ? "Authenticating..." : user?.username ? `@${user.username}` : "Unauthenticated"}
+                  {user?.username ? `@${user.username}` : "Unauthenticated"}
                 </div>
                 {userWalletAddress ? (
                   <div className="flex items-center gap-2 mt-1">
@@ -173,45 +156,42 @@ export default function ProfilePage() {
         </Card>
 
         {/* Balance Section */}
-        <Card className="bg-panel border-[#1C1F25] mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-[#E9ECEF]">
-              <Wallet className="h-5 w-5 text-gradient-blue" />
+        <Card className="bg-panel border-[#1C1F25] mb-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-[#E9ECEF] text-base">
+              <Wallet className="h-4 w-4 text-gradient-blue" />
               Your Balances
             </CardTitle>
-            <CardDescription className="text-[#707784]">Your USDP and Pi balances</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-4 rounded-lg bg-panel-light border border-[#1C1F25]">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-blue/20 flex items-center justify-center">
-                    <Coins className="h-5 w-5 text-gradient-blue" />
+          <CardContent className="pt-0 space-y-2">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-panel-light border border-[#1C1F25]">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-full bg-gradient-blue/20 flex items-center justify-center flex-shrink-0">
+                  <Coins className="h-4 w-4 text-gradient-blue" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-[#707784] leading-tight">USDP</div>
+                  <div className="text-lg font-bold text-gradient-blue leading-tight">
+                    {parseFloat(balance?.zyra?.amount || balance?.usdp?.amount || '0').toFixed(7)}
                   </div>
-                  <div>
-                    <div className="text-xs text-[#707784]">USDP Balance</div>
-                    <div className="text-xl font-bold text-gradient-blue">
-                      {parseFloat(balance?.zyra?.amount || balance?.usdp?.amount || '0').toFixed(7)}
-                    </div>
-                    <div className="text-xs text-[#707784]">
-                      ${balance?.zyra?.usdValue || balance?.usdp?.usdValue || '0.00'} USD
-                    </div>
+                  <div className="text-[10px] text-[#707784] leading-tight">
+                    ${balance?.zyra?.usdValue || balance?.usdp?.usdValue || '0.00'}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center justify-between p-4 rounded-lg bg-panel-light border border-[#1C1F25]">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-blue/20 flex items-center justify-center">
-                    <Wallet className="h-5 w-5 text-gradient-blue" />
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-panel-light border border-[#1C1F25]">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-full bg-gradient-blue/20 flex items-center justify-center flex-shrink-0">
+                  <Wallet className="h-4 w-4 text-gradient-blue" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-[#707784] leading-tight">Pi</div>
+                  <div className="text-lg font-bold text-[#E9ECEF] leading-tight">
+                    {parseFloat(balance?.pi?.amount || '0').toFixed(7)}
                   </div>
-                  <div>
-                    <div className="text-xs text-[#707784]">Pi Balance</div>
-                    <div className="text-xl font-bold text-[#E9ECEF]">
-                      {parseFloat(balance?.pi?.amount || '0').toFixed(7)}
-                    </div>
-                    <div className="text-xs text-[#707784]">
-                      ${balance?.pi?.usdValue || '0.00'} USD
-                    </div>
+                  <div className="text-[10px] text-[#707784] leading-tight">
+                    ${balance?.pi?.usdValue || '0.00'}
                   </div>
                 </div>
               </div>
