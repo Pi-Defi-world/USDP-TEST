@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { ArrowUpRight, ArrowDownLeft, Send, History } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, Send, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface QuickActionsProps {
   onMint: () => void;
@@ -13,44 +13,48 @@ export function QuickActions({ onMint, onRedeem }: QuickActionsProps) {
   const actions = [
     {
       label: 'Mint',
-      icon: ArrowUpRight,
+      icon: ArrowDownLeft,
       onClick: onMint,
-      variant: 'accent' as const,
+      iconBg: 'bg-success/10',
+      iconColor: 'text-success',
     },
     {
       label: 'Redeem',
-      icon: ArrowDownLeft,
+      icon: ArrowUpRight,
       onClick: onRedeem,
-      variant: 'default' as const,
+      iconBg: 'bg-accent/10',
+      iconColor: 'text-accent',
     },
     {
       label: 'Send',
       icon: Send,
       href: '#',
-      variant: 'default' as const,
       disabled: true,
+      iconBg: 'bg-muted',
+      iconColor: 'text-muted-foreground',
     },
     {
       label: 'History',
-      icon: History,
+      icon: Clock,
       href: '/stats',
-      variant: 'default' as const,
+      iconBg: 'bg-muted',
+      iconColor: 'text-muted-foreground',
     },
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="grid grid-cols-4 gap-3">
       {actions.map((action) => {
         const content = (
-          <div className="flex flex-col items-center gap-2 py-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-              action.variant === 'accent' 
-                ? 'bg-accent text-accent-foreground' 
-                : 'bg-secondary text-foreground'
-            }`}>
-              <action.icon className="w-5 h-5" />
+          <div className="flex flex-col items-center gap-2.5 py-1">
+            <div className={cn(
+              'w-12 h-12 rounded-2xl flex items-center justify-center transition-transform duration-200',
+              action.iconBg,
+              !action.disabled && 'group-hover:scale-105 group-active:scale-95'
+            )}>
+              <action.icon className={cn('w-5 h-5', action.iconColor)} />
             </div>
-            <span className="text-xs font-medium">{action.label}</span>
+            <span className="text-xs font-medium text-foreground">{action.label}</span>
           </div>
         );
 
@@ -59,9 +63,10 @@ export function QuickActions({ onMint, onRedeem }: QuickActionsProps) {
             <Link
               key={action.label}
               href={action.href}
-              className={`rounded-xl transition-colors hover:bg-secondary/50 ${
-                action.disabled ? 'opacity-50 pointer-events-none' : ''
-              }`}
+              className={cn(
+                'group rounded-2xl transition-all duration-200 hover:bg-muted/50 active:bg-muted',
+                action.disabled && 'opacity-40 pointer-events-none'
+              )}
             >
               {content}
             </Link>
@@ -73,7 +78,10 @@ export function QuickActions({ onMint, onRedeem }: QuickActionsProps) {
             key={action.label}
             onClick={action.onClick}
             disabled={action.disabled}
-            className="rounded-xl transition-colors hover:bg-secondary/50 disabled:opacity-50"
+            className={cn(
+              'group rounded-2xl transition-all duration-200 hover:bg-muted/50 active:bg-muted',
+              'disabled:opacity-40 disabled:pointer-events-none'
+            )}
           >
             {content}
           </button>

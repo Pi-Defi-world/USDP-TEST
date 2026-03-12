@@ -3,55 +3,23 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, TrendingUp, Wallet, PiggyBank, MoreHorizontal } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Home, BarChart3, Settings, Wallet } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', icon: Home, label: 'Home' },
-  { href: '/dashboard/save', icon: PiggyBank, label: 'Save' },
-  { href: '/dashboard/reserve', icon: Wallet, label: 'Reserve' },
-  { href: '/stats', icon: TrendingUp, label: 'Stats' },
-  { href: '/settings', icon: MoreHorizontal, label: 'More' },
+  { href: '/dashboard/save', icon: Wallet, label: 'Earn' },
+  { href: '/stats', icon: BarChart3, label: 'Stats' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const maxScroll = document.body.scrollHeight - window.innerHeight;
-      
-      // Always show at top or bottom of page
-      if (currentScrollY < 50 || currentScrollY > maxScroll - 50) {
-        setIsVisible(true);
-      } else if (currentScrollY > lastScrollY + 10) {
-        // Scrolling down - hide
-        setIsVisible(false);
-      } else if (currentScrollY < lastScrollY - 10) {
-        // Scrolling up - show
-        setIsVisible(true);
-      }
-      
-      setLastScrollY(currentScrollY);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
 
   return (
-    <div 
-      className={cn(
-        'bottom-nav lg:hidden transition-transform duration-300 ease-out',
-        isVisible ? 'translate-y-0' : 'translate-y-full'
-      )}
-    >
+    <div className="bottom-nav lg:hidden">
       <div className="px-4 pb-2">
-        <nav className="bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg">
-          <div className="flex items-center justify-around px-2 py-2">
+        <nav className="bg-card/80 backdrop-blur-2xl border border-border/50 rounded-2xl shadow-lg shadow-black/5">
+          <div className="flex items-center justify-around px-2 py-1.5">
             {navItems.map((item) => {
               const isActive = pathname === item.href || 
                 (pathname?.startsWith(item.href) && item.href !== '/dashboard') ||
@@ -62,19 +30,26 @@ export function BottomNav() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'flex flex-col items-center justify-center min-w-[56px] py-2 px-3 rounded-xl transition-all duration-200',
+                    'flex flex-col items-center justify-center min-w-[64px] py-2.5 px-3 rounded-xl transition-all duration-200 active:scale-95',
                     isActive 
-                      ? 'text-accent bg-accent/10' 
+                      ? 'text-foreground' 
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
-                  <item.icon className={cn(
-                    'w-5 h-5 mb-1 transition-transform duration-200',
-                    isActive && 'scale-110'
-                  )} />
+                  <div className={cn(
+                    'relative flex items-center justify-center w-6 h-6 mb-1',
+                  )}>
+                    {isActive && (
+                      <div className="absolute inset-0 bg-accent/20 rounded-full scale-150" />
+                    )}
+                    <item.icon className={cn(
+                      'w-5 h-5 relative z-10 transition-transform duration-200',
+                      isActive && 'text-accent'
+                    )} />
+                  </div>
                   <span className={cn(
-                    'text-[10px] font-medium',
-                    isActive && 'text-accent'
+                    'text-[11px] font-medium transition-colors',
+                    isActive ? 'text-foreground' : 'text-muted-foreground'
                   )}>
                     {item.label}
                   </span>

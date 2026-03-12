@@ -2,17 +2,23 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { NumericInput } from '@/components/ui/numeric-input';
+import { SuccessAnimation } from '@/components/ui/success-animation';
+import {
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetHeader,
+  BottomSheetTitle,
+  BottomSheetDescription,
+  BottomSheetBody,
+  BottomSheetFooter,
+} from '@/components/ui/bottom-sheet';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/lib/store/authStore';
 import { usePriceStore } from '@/lib/store/priceStore';
 import { useWalletStore } from '@/lib/store/walletStore';
 import { apiClient } from '@/lib/api/client';
-import { TestnetBadge } from '@/components/TestnetBadge';
-import { Loader2, Calculator, AlertCircle, CheckCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Info } from 'lucide-react';
 
 interface RedeemFormProps {
   walletAddress: string;
@@ -23,90 +29,66 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [transactionResult, setTransactionResult] = useState<{ success: boolean; txHash?: string; error?: string } | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [txResult, setTxResult] = useState<{ txHash?: string } | null>(null);
 
   const { toast } = useToast();
   const { retrieveKeypairForTransaction, setError: clearAuthError } = useAuthStore();
   const { piPrice } = usePriceStore();
   const { balance } = useWalletStore();
-  const isTestnet = apiClient.isTestnetMode();
 
-  // Calculate Pi output and fees based on the off-chain USD reserve model.
-  const usdpAmount = parseFloat(amount) || 0;
-  const usdValue = usdpAmount; // 1 USDP = 1 USD
-  const redeemFee = usdValue * 0.003; // 0.3% fee on USD value
-  const netUsdValue = usdValue - redeemFee; // USD value after fee
-  // Pi output = (USD value - fee) / Pi price (no overcollateralization on redeem).
+  // Calculations
+  const pusdAmount = parseFloat(amount) || 0;
+  const usdValue = pusdAmount; // 1 PUSD = 1 USD
+  const redeemFee = usdValue * 0.003;
+  const netUsdValue = usdValue - redeemFee;
   const currentPiPrice = piPrice || 0;
   const piOutput = currentPiPrice > 0 ? netUsdValue / currentPiPrice : 0;
+  const pusdBalance = parseFloat(balance?.usdp?.amount || '0');
+  const hasSufficientBalance = pusdBalance >= pusdAmount;
 
-  // Check if user has sufficient USDP balance
-  const usdpBalance = parseFloat(balance?.usdp?.amount || '0');
-  const hasSufficientBalance = usdpBalance >= usdpAmount;
-
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setAmount(value);
-      setError(null);
-    }
-  };
-
-  const handleRedeem = async () => {
-    if (!amount || usdpAmount <= 0) {
-      setError('Please enter a valid amount');
+  const handleRedeem = () => {
+    if (!amount || pusdAmount <= 0) {
+      setError('Enter an amount');
       return;
     }
-
     if (!hasSufficientBalance) {
-      setError('Insufficient USDP balance');
+      setError('Insufficient balance');
       return;
     }
-
     setShowConfirmation(true);
   };
 
   const confirmRedeem = async () => {
     setIsLoading(true);
     setError(null);
-    setTransactionResult(null);
 
     try {
-      // Retrieve keypair using passkey authentication
       const keypair = await retrieveKeypairForTransaction(walletAddress);
-      
-      // Call redeem API with keypair data using apiClient (includes Authorization header)
       const result = await apiClient.redeem({
-        amount: usdpAmount,
+        amount: pusdAmount,
         walletAddress: keypair.walletAddress,
         secretSeed: keypair.secretSeed,
       });
 
       if (!result.success) {
-        throw new Error(result.error || 'Redeem transaction failed');
+        throw new Error(result.error || 'Transaction failed');
       }
 
-      const transactionData = result.data as { success: boolean; txHash?: string; error?: string } | null;
-      setTransactionResult(transactionData || { success: true });
+      const transactionData = result.data as { success: boolean; txHash?: string } | null;
+      setTxResult(transactionData || { txHash: undefined });
       setShowConfirmation(false);
-      
-      toast({
-        title: 'Redeem Successful',
-        description: `Successfully redeemed ${piOutput.toFixed(7)} Pi tokens${isTestnet ? ' on testnet' : ''}`,
-      });
+      setShowSuccess(true);
 
-      // Refresh balance
       if (onTransactionComplete) {
         onTransactionComplete();
       }
-
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Redeem transaction failed';
+      const errorMessage = err instanceof Error ? err.message : 'Transaction failed';
       setError(errorMessage);
-      
       toast({
-        title: 'Redeem Failed',
+        title: 'Transaction Failed',
         description: errorMessage,
         variant: 'destructive',
       });
@@ -115,239 +97,158 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
     }
   };
 
-  const handleRetry = () => {
-    setError(null);
-    setTransactionResult(null);
+  const handleSuccessComplete = () => {
+    setShowSuccess(false);
+    setAmount('');
+    setTxResult(null);
   };
 
-  if (transactionResult) {
+  const handleMax = () => {
+    setAmount(pusdBalance.toFixed(2));
+  };
+
+  // Success state
+  if (showSuccess) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            Redeem Successful
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Transaction Hash:</span>
-              <span className="font-mono text-sm">{transactionResult.txHash || 'N/A'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Pi Redeemed:</span>
-              <span className="font-semibold">{piOutput.toFixed(7)} Pi</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Fee Paid:</span>
-              <span className="text-sm">{redeemFee.toFixed(7)} USDP</span>
-            </div>
-          </div>
-          <Button onClick={handleRetry} className="w-full">
-            Redeem More
+      <div className="flex flex-col h-full">
+        <SuccessAnimation
+          title="Redeem Complete"
+          subtitle={txResult?.txHash ? `Transaction: ${txResult.txHash.slice(0, 8)}...` : 'Your Pi is ready'}
+          amount={piOutput.toFixed(4)}
+          currency="Pi"
+        />
+        <div className="mt-auto px-4 pb-4">
+          <Button onClick={handleSuccessComplete} className="w-full" size="lg">
+            Done
           </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (showConfirmation) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Confirm Redeem Transaction</CardTitle>
-          <CardDescription>Review your transaction details before confirming</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="space-y-2">
-                <div>{error}</div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setError(null);
-                    clearAuthError(null);
-                    confirmRedeem();
-                  }}
-                  disabled={isLoading}
-                  className="mt-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Retrying...
-                    </>
-                  ) : (
-                    'Retry Authentication'
-                  )}
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">USDP Amount:</span>
-              <span className="font-semibold">{usdpAmount.toFixed(7)} USDP</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Redeem Fee (0.3%):</span>
-              <span className="text-sm">{redeemFee.toFixed(7)} USDP</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Pi Output:</span>
-              <span className="font-semibold text-green-600">{piOutput.toFixed(7)} Pi</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">USD Value:</span>
-              <span className="text-sm">${usdValue.toFixed(2)}</span>
-            </div>
-            <div className="border-t pt-2 mt-2">
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded text-xs">
-                <p className="text-muted-foreground mb-1">
-                  <strong>Note:</strong> USDP tokens are minted with 115% overcollateralization. 
-                  When redeeming, you receive Pi based on the current Pi price without the overcollateralization premium.
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button 
-              onClick={confirmRedeem} 
-              disabled={isLoading}
-              className="flex-1"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                'Confirm Redeem'
-              )}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setShowConfirmation(false);
-                setError(null);
-                clearAuthError(null);
-              }}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="h-5 w-5" />
-              Redeem USDP Tokens
-            </CardTitle>
-            <CardDescription>
-              Convert your USDP stablecoin back to Pi tokens
-            </CardDescription>
-          </div>
-          {isTestnet && <TestnetBadge />}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {isTestnet && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              On testnet, this simulates returning USDP to the issuer and receiving Pi back from the reserve at the current oracle price.
-            </AlertDescription>
-          </Alert>
-        )}
+    <div className="flex flex-col h-full">
+      {/* Amount Input */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
+        <NumericInput
+          value={amount}
+          onChange={(val) => {
+            setAmount(val);
+            setError(null);
+          }}
+          currency="PUSD"
+          secondaryValue={piOutput > 0 ? `${piOutput.toFixed(4)}` : undefined}
+          secondaryCurrency={piOutput > 0 ? 'Pi' : undefined}
+          maxValue={pusdBalance}
+          onMax={handleMax}
+        />
+
+        {/* Error message */}
         {error && (
-          <Alert variant="destructive">
+          <div className="flex items-center gap-2 text-destructive text-sm mt-2">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+            <span>{error}</span>
+          </div>
         )}
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="usdp-amount">USDP Amount</Label>
-          <Input
-            id="usdp-amount"
-            type="text"
-            placeholder="0.0000000"
-            value={amount}
-            onChange={handleAmountChange}
-            disabled={isLoading}
-          />
-          <p className="text-xs text-muted-foreground">
-            Available: {usdpBalance.toFixed(7)} USDP
-          </p>
+      {/* Info row */}
+      {pusdAmount > 0 && (
+        <div className="px-4 pb-4">
+          <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-muted/50 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Info className="h-4 w-4" />
+              <span>Fee (0.3%)</span>
+            </div>
+            <span className="font-mono text-foreground">{redeemFee.toFixed(4)} PUSD</span>
+          </div>
         </div>
+      )}
 
-        {amount && usdpAmount > 0 && (
-          <div className="space-y-2 p-3 bg-muted rounded-lg">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">USDP Amount:</span>
-              <span>{usdpAmount.toFixed(7)} USDP</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Redeem Fee (0.3%):</span>
-              <span>{redeemFee.toFixed(7)} USDP</span>
-            </div>
-            <div className="flex justify-between text-sm font-semibold">
-              <span>Pi Output:</span>
-              <span className="text-green-600">{piOutput.toFixed(7)} Pi</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">USD Value:</span>
-              <span>${usdValue.toFixed(2)}</span>
-            </div>
-            <div className="border-t pt-2 mt-2">
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded text-xs">
-                <p className="text-muted-foreground">
-                  <strong>Note:</strong> USDP uses 115% overcollateralization. 
-                  Redeem returns Pi at current market price (no overcollateralization premium).
-                </p>
+      {/* Action button */}
+      <div className="px-4 pb-4 safe-area-bottom">
+        <Button
+          onClick={handleRedeem}
+          disabled={!amount || pusdAmount <= 0}
+          className="w-full"
+          size="lg"
+        >
+          {!hasSufficientBalance && pusdAmount > 0 ? 'Insufficient Balance' : 'Continue'}
+        </Button>
+      </div>
+
+      {/* Confirmation Bottom Sheet */}
+      <BottomSheet open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <BottomSheetContent>
+          <BottomSheetHeader>
+            <BottomSheetTitle>Confirm Redeem</BottomSheetTitle>
+            <BottomSheetDescription>
+              Review the details before confirming
+            </BottomSheetDescription>
+          </BottomSheetHeader>
+
+          <BottomSheetBody>
+            {error && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm mb-4">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="flex justify-between py-3 border-b border-border">
+                <span className="text-muted-foreground">You redeem</span>
+                <span className="font-mono font-medium">{pusdAmount.toFixed(4)} PUSD</span>
+              </div>
+              <div className="flex justify-between py-3 border-b border-border">
+                <span className="text-muted-foreground">USD Value</span>
+                <span className="font-mono text-sm">${usdValue.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between py-3 border-b border-border">
+                <span className="text-muted-foreground">Fee</span>
+                <span className="font-mono text-sm">{redeemFee.toFixed(4)} PUSD</span>
+              </div>
+              <div className="flex justify-between py-3">
+                <span className="font-medium">You receive</span>
+                <span className="font-mono font-semibold text-success">
+                  {piOutput.toFixed(4)} Pi
+                </span>
               </div>
             </div>
-          </div>
-        )}
+          </BottomSheetBody>
 
-        <Button 
-          onClick={handleRedeem} 
-          disabled={isLoading || !amount || usdpAmount <= 0 || !hasSufficientBalance}
-          className="w-full"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            'Redeem Pi'
-          )}
-        </Button>
-
-        {!hasSufficientBalance && usdpAmount > 0 && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Insufficient USDP balance. You need {usdpAmount.toFixed(7)} USDP but only have {usdpBalance.toFixed(7)} USDP.
-            </AlertDescription>
-          </Alert>
-        )}
-      </CardContent>
-    </Card>
+          <BottomSheetFooter>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowConfirmation(false);
+                  setError(null);
+                  clearAuthError(null);
+                }}
+                disabled={isLoading}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmRedeem}
+                disabled={isLoading}
+                className="flex-1"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing
+                  </>
+                ) : (
+                  'Confirm'
+                )}
+              </Button>
+            </div>
+          </BottomSheetFooter>
+        </BottomSheetContent>
+      </BottomSheet>
+    </div>
   );
 }

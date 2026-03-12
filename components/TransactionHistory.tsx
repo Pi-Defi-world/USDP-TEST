@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { apiClient } from '@/lib/api/client';
 import { TransactionHistoryItem } from '@/types';
-import { ArrowUpCircle, ArrowDownCircle, Link2, RefreshCw, CheckCircle2, XCircle, FileText } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, ExternalLink, RefreshCw, CheckCircle2, Clock, XCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { TransactionRow, TransactionRowSkeleton } from '@/components/ui/transaction-row';
 
 interface TransactionHistoryProps {
   walletAddress?: string;
@@ -17,7 +17,7 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isTestnet = apiClient.isTestnetMode();
-  // Use testnet explorer when NEXT_PUBLIC_NETWORK=testnet (or hostname includes "testnet"); otherwise mainnet explorer
+  
   const explorerTxUrl = isTestnet
     ? (hash: string) => `https://blockexplorer.minepi.com/testnet/tx/${hash}`
     : (hash: string) => `https://blockexplorer.minepi.com/tx/${hash}`;
@@ -49,216 +49,150 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [walletAddress]);
 
-  const formatDate = (dateString: string) => {
+  const formatRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const getTypeBadge = (type: string) => {
-    switch (type) {
-      case 'mint':
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Mint</Badge>;
-      case 'redeem':
-        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">Redeem</Badge>;
-      case 'transfer':
-        return <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">Transfer</Badge>;
-      case 'trustline':
-        return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">Trustline</Badge>;
-      default:
-        return <Badge variant="secondary">{type}</Badge>;
-    }
-  };
-
-  const getDirectionIcon = (direction: string | null) => {
-    if (direction === 'in') {
-      return <ArrowDownCircle className="h-4 w-4 text-green-600" />;
-    } else if (direction === 'out') {
-      return <ArrowUpCircle className="h-4 w-4 text-red-600" />;
-    }
-    return <FileText className="h-4 w-4 text-muted-foreground" />;
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString();
   };
 
   if (!walletAddress) {
     return (
-      <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-        <CardHeader>
-          <CardTitle>Transaction History</CardTitle>
-          <CardDescription>Your USDP transaction history</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">Please connect your wallet to view transaction history</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="rounded-2xl border border-border bg-card p-8 text-center">
+        <FileText className="h-8 w-8 mx-auto text-muted-foreground/50 mb-3" />
+        <p className="text-sm text-muted-foreground">Connect wallet to view history</p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="rounded-2xl border border-border bg-card divide-y divide-border">
+        {[...Array(3)].map((_, i) => (
+          <TransactionRowSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-8 text-center">
+        <XCircle className="h-8 w-8 mx-auto text-destructive/50 mb-3" />
+        <p className="text-sm text-destructive mb-4">{error}</p>
+        <Button variant="outline" size="sm" onClick={fetchHistory}>
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  if (transactions.length === 0) {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-8 text-center">
+        <FileText className="h-8 w-8 mx-auto text-muted-foreground/50 mb-3" />
+        <p className="text-sm text-muted-foreground">No transactions yet</p>
+        <p className="text-xs text-muted-foreground/70 mt-1">
+          Your activity will appear here
+        </p>
+      </div>
     );
   }
 
   return (
-    <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <div>
-          <CardTitle>Transaction History</CardTitle>
-          <CardDescription>Your USDP transaction history</CardDescription>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="max-h-[400px] overflow-y-auto divide-y divide-border">
+        {transactions.map((tx) => {
+          const type = tx.type as 'mint' | 'redeem' | 'send' | 'receive';
+          const amount = tx.usdpAmount || tx.zyraAmount || tx.piAmount || '0';
+          const currency = tx.usdpAmount || tx.zyraAmount ? 'PUSD' : 'Pi';
+          const status = tx.success ? 'completed' : 'failed';
+
+          return (
+            <div
+              key={tx.hash}
+              className="flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors cursor-pointer"
+              onClick={() => window.open(explorerTxUrl(tx.hash), '_blank')}
+            >
+              {/* Icon */}
+              <div
+                className={cn(
+                  'flex items-center justify-center w-10 h-10 rounded-full shrink-0',
+                  type === 'mint' && 'text-success bg-success/10',
+                  type === 'redeem' && 'text-accent bg-accent/10',
+                  type === 'send' && 'text-muted-foreground bg-muted',
+                  type === 'receive' && 'text-success bg-success/10'
+                )}
+              >
+                {(type === 'mint' || type === 'receive') ? (
+                  <ArrowDownLeft className="h-4 w-4" />
+                ) : (
+                  <ArrowUpRight className="h-4 w-4" />
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm text-foreground capitalize">
+                    {type}
+                  </span>
+                  {tx.success ? (
+                    <CheckCircle2 className="h-3 w-3 text-success" />
+                  ) : (
+                    <XCircle className="h-3 w-3 text-destructive" />
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {formatRelativeTime(tx.createdAt)}
+                </span>
+              </div>
+
+              {/* Amount */}
+              <div className="text-right shrink-0">
+                <div className={cn(
+                  'font-mono font-medium text-sm',
+                  (type === 'mint' || type === 'receive') ? 'text-success' : 'text-foreground'
+                )}>
+                  {(type === 'mint' || type === 'receive') ? '+' : '-'}
+                  {parseFloat(amount).toFixed(4)} {currency}
+                </div>
+                {tx.piAmount && currency !== 'Pi' && (
+                  <div className="text-xs text-muted-foreground font-mono">
+                    {type === 'mint' ? '-' : '+'}{parseFloat(tx.piAmount).toFixed(4)} Pi
+                  </div>
+                )}
+              </div>
+
+              {/* External link indicator */}
+              <ExternalLink className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Refresh button */}
+      <div className="p-3 border-t border-border bg-muted/30">
+        <Button 
+          variant="ghost" 
+          size="sm" 
           onClick={fetchHistory}
           disabled={isLoading}
+          className="w-full text-xs text-muted-foreground"
         >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={cn('h-3 w-3 mr-2', isLoading && 'animate-spin')} />
           Refresh
         </Button>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="text-center py-8">
-            <RefreshCw className="h-8 w-8 mx-auto animate-spin text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Loading transaction history...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-8">
-            <XCircle className="h-8 w-8 mx-auto text-red-500 mb-4" />
-            <p className="text-red-600 dark:text-red-400">{error}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchHistory}
-              className="mt-4"
-            >
-              Try Again
-            </Button>
-          </div>
-        ) : transactions.length === 0 ? (
-          <div className="text-center py-8">
-            <FileText className="h-8 w-8 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No transactions found</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Your USDP transaction history will appear here
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3 max-h-[600px] overflow-y-auto">
-            {transactions.map((tx) => (
-              <div
-                key={tx.hash}
-                className="flex items-start justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-start space-x-4 flex-1">
-                  <div className="mt-1">
-                    {getDirectionIcon(tx.direction)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-2">
-                      {getTypeBadge(tx.type)}
-                      {tx.success ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-red-600" />
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      {tx.type === 'mint' && (
-                        <>
-                          {(tx.usdpAmount || tx.zyraAmount) && (
-                            <div className="flex items-center space-x-2">
-                              <span className="text-sm font-medium text-green-600">
-                                +{tx.usdpAmount || tx.zyraAmount} USDP
-                              </span>
-                            </div>
-                          )}
-                          {tx.piAmount && (
-                            <div className="flex items-center space-x-2">
-                              <span className="text-xs text-muted-foreground">
-                                -{tx.piAmount} Pi
-                              </span>
-                            </div>
-                          )}
-                        </>
-                      )}
-                      {tx.type === 'redeem' && (
-                        <>
-                          {(tx.usdpAmount || tx.zyraAmount) && (
-                            <div className="flex items-center space-x-2">
-                              <span className="text-sm font-medium text-red-600">
-                                -{tx.usdpAmount || tx.zyraAmount} USDP
-                              </span>
-                            </div>
-                          )}
-                          {tx.piAmount && (
-                            <div className="flex items-center space-x-2">
-                              <span className="text-xs text-muted-foreground">
-                                +{tx.piAmount} Pi
-                              </span>
-                            </div>
-                          )}
-                        </>
-                      )}
-                      {tx.type !== 'mint' && tx.type !== 'redeem' && (
-                        <>
-                          {(tx.usdpAmount || tx.zyraAmount) && (
-                            <div className="flex items-center space-x-2">
-                              <span className="text-sm font-medium">
-                                {tx.direction === 'in' ? '+' : '-'}
-                                {tx.usdpAmount || tx.zyraAmount} USDP
-                              </span>
-                            </div>
-                          )}
-                          {tx.piAmount && (
-                            <div className="flex items-center space-x-2">
-                              <span className="text-xs text-muted-foreground">
-                                {tx.direction === 'in' ? '+' : '-'}
-                                {tx.piAmount} Pi
-                              </span>
-                            </div>
-                          )}
-                        </>
-                      )}
-                      <div className="text-xs text-muted-foreground">
-                        {formatDate(tx.createdAt)}
-                      </div>
-                      {tx.memo && (
-                        <div className="text-xs text-muted-foreground italic">
-                          {tx.memo}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end space-y-2 ml-4">
-                  <a
-                    href={explorerTxUrl(tx.hash)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center space-x-1"
-                  >
-                    <Link2 className="h-3 w-3" />
-                    <span>View</span>
-                  </a>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    {(tx.usdpFee || tx.zyraFee) && (
-                      <div>
-                        USDP Fee: {tx.usdpFee || tx.zyraFee} USDP
-                      </div>
-                    )}
-                    <div>
-                      Network Fee: {tx.feeInTestnetPi ? `${tx.feeInTestnetPi} Test-Pi` : `${tx.fee} Pi`}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
-

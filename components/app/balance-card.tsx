@@ -1,10 +1,9 @@
 'use client';
 
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { RefreshCw, Eye, EyeOff, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 
 interface BalanceCardProps {
   pusdBalance: string;
@@ -35,25 +34,29 @@ export function BalanceCard({
 
   const formatCrypto = (value: string) => {
     const num = parseFloat(value);
-    if (isNaN(num)) return '0.0000';
+    if (isNaN(num)) return '0.00';
+    if (num >= 1000) {
+      return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
     return num.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
   };
 
   const totalUsdValue = (parseFloat(pusdValue) || 0) + (parseFloat(piValue) || 0);
 
   return (
-    <Card className="p-6 bg-card border-border overflow-hidden relative">
-      {/* Background accent */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+    <div className="rounded-3xl bg-foreground text-background p-6 overflow-hidden relative">
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-accent/10 pointer-events-none" />
       
       <div className="relative">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm text-muted-foreground">Total Balance</span>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-background/60 font-medium">Total Balance</span>
+          <div className="flex items-center gap-1">
             <button
               onClick={() => setShowBalance(!showBalance)}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+              className="p-2 rounded-full text-background/60 hover:text-background hover:bg-background/10 transition-colors"
+              aria-label={showBalance ? 'Hide balance' : 'Show balance'}
             >
               {showBalance ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
             </button>
@@ -61,9 +64,10 @@ export function BalanceCard({
               onClick={onRefresh}
               disabled={isLoading}
               className={cn(
-                'p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors',
+                'p-2 rounded-full text-background/60 hover:text-background hover:bg-background/10 transition-colors',
                 isLoading && 'animate-spin'
               )}
+              aria-label="Refresh balance"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -71,59 +75,74 @@ export function BalanceCard({
         </div>
 
         {/* Total Value */}
-        <div className="mb-6">
-          <p className="money-lg">
+        <div className="mb-8">
+          <p className="text-4xl md:text-5xl font-semibold tracking-tight font-mono tabular-nums">
             {showBalance ? `$${formatNumber(totalUsdValue.toString())}` : '••••••'}
           </p>
         </div>
 
-        {/* Asset Breakdown */}
-        <div className="space-y-3">
+        {/* Asset List */}
+        <div className="space-y-2">
           {/* PUSD */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
+          <Link
+            href="/dashboard?tab=overview"
+            className="flex items-center justify-between p-3 -mx-3 rounded-2xl hover:bg-background/5 transition-colors group"
+          >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
-                <span className="text-xs font-bold text-accent">P</span>
+              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
+                <span className="text-sm font-bold text-accent">P</span>
               </div>
               <div>
-                <p className="font-medium text-sm">PUSD</p>
-                <p className="text-xs text-muted-foreground">Stablecoin</p>
+                <p className="font-medium">PUSD</p>
+                <p className="text-sm text-background/50">$1.00</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="font-medium text-sm tabular-nums">
-                {showBalance ? formatCrypto(pusdBalance) : '••••'}
-              </p>
-              <p className="text-xs text-muted-foreground tabular-nums">
-                ${showBalance ? formatNumber(pusdValue) : '••••'}
-              </p>
+            <div className="flex items-center gap-2">
+              <div className="text-right">
+                <p className="font-medium tabular-nums font-mono">
+                  {showBalance ? formatCrypto(pusdBalance) : '••••'}
+                </p>
+                <p className="text-sm text-background/50 tabular-nums font-mono">
+                  ${showBalance ? formatNumber(pusdValue) : '••••'}
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-background/30 group-hover:text-background/60 transition-colors" />
             </div>
-          </div>
+          </Link>
+
+          {/* Divider */}
+          <div className="h-px bg-background/10" />
 
           {/* Pi */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
+          <Link
+            href="/dashboard?tab=overview"
+            className="flex items-center justify-between p-3 -mx-3 rounded-2xl hover:bg-background/5 transition-colors group"
+          >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-foreground/10 flex items-center justify-center">
-                <span className="text-xs font-bold">Pi</span>
+              <div className="w-10 h-10 rounded-full bg-background/10 flex items-center justify-center">
+                <span className="text-sm font-bold">Pi</span>
               </div>
               <div>
-                <p className="font-medium text-sm">Pi</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="font-medium">Pi Network</p>
+                <p className="text-sm text-background/50">
                   ${piPrice?.toFixed(4) || '0.0000'}
                 </p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="font-medium text-sm tabular-nums">
-                {showBalance ? formatCrypto(piBalance) : '••••'}
-              </p>
-              <p className="text-xs text-muted-foreground tabular-nums">
-                ${showBalance ? formatNumber(piValue) : '••••'}
-              </p>
+            <div className="flex items-center gap-2">
+              <div className="text-right">
+                <p className="font-medium tabular-nums font-mono">
+                  {showBalance ? formatCrypto(piBalance) : '••••'}
+                </p>
+                <p className="text-sm text-background/50 tabular-nums font-mono">
+                  ${showBalance ? formatNumber(piValue) : '••••'}
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-background/30 group-hover:text-background/60 transition-colors" />
             </div>
-          </div>
+          </Link>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }

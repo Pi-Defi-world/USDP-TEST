@@ -334,8 +334,23 @@
 
 .animate-slide-up {
   animation: slide-up 0.4s ease-out;
+  animation-fill-mode: both;
 }
 
 .animate-scale-in {
   animation: scale-in 0.2s ease-out;
+}
+
+/* Safe area utilities */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+
+/* Number formatting */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }

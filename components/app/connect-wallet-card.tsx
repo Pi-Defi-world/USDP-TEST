@@ -1,10 +1,10 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { usePi } from '@/components/providers/pi-provider';
-import { Wallet, ArrowRight } from 'lucide-react';
+import { Wallet, ArrowRight, Shield, Zap } from 'lucide-react';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export function ConnectWalletCard() {
   const { authenticate } = usePi();
@@ -28,24 +28,32 @@ export function ConnectWalletCard() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[70vh] px-4">
-      <Card className="w-full max-w-sm p-8 bg-card border-border text-center">
-        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-accent/10 flex items-center justify-center">
-          <Wallet className="w-8 h-8 text-accent" />
+    <div className="flex items-center justify-center min-h-[75vh] px-4">
+      <div className="w-full max-w-sm text-center">
+        {/* Icon */}
+        <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-foreground flex items-center justify-center">
+          <Wallet className="w-10 h-10 text-background" />
         </div>
         
-        <h2 className="text-xl font-semibold mb-2">Connect Wallet</h2>
-        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-          Connect your Pi Network wallet to access the PUSD dashboard.
+        {/* Copy */}
+        <h1 className="text-2xl font-bold tracking-tight mb-3">
+          Welcome to PUSD
+        </h1>
+        <p className="text-muted-foreground mb-8 leading-relaxed">
+          Connect your Pi wallet to start minting and managing your stablecoins.
         </p>
 
+        {/* Connect Button */}
         <Button 
           onClick={handleConnect}
           disabled={isLoading}
-          className="w-full btn-accent h-12 text-base"
+          className="w-full h-13 text-base rounded-xl mb-8"
         >
           {isLoading ? (
-            'Connecting...'
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full border-2 border-background border-t-transparent animate-spin" />
+              Connecting...
+            </div>
           ) : (
             <>
               Connect Pi Wallet
@@ -54,10 +62,25 @@ export function ConnectWalletCard() {
           )}
         </Button>
 
-        <p className="mt-4 text-xs text-muted-foreground">
-          Make sure you have the Pi Browser installed
+        {/* Features */}
+        <div className="grid grid-cols-2 gap-3 text-left">
+          <div className="p-4 rounded-2xl bg-muted/50">
+            <Shield className="w-5 h-5 text-accent mb-2" />
+            <p className="text-sm font-medium mb-0.5">Secure</p>
+            <p className="text-xs text-muted-foreground">115% backed collateral</p>
+          </div>
+          <div className="p-4 rounded-2xl bg-muted/50">
+            <Zap className="w-5 h-5 text-accent mb-2" />
+            <p className="text-sm font-medium mb-0.5">Instant</p>
+            <p className="text-xs text-muted-foreground">Mint in seconds</p>
+          </div>
+        </div>
+
+        {/* Footer note */}
+        <p className="mt-8 text-xs text-muted-foreground/70">
+          Requires Pi Browser
         </p>
-      </Card>
+      </div>
     </div>
   );
 }

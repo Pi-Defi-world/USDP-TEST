@@ -2,17 +2,24 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { NumericInput } from '@/components/ui/numeric-input';
+import { SuccessAnimation } from '@/components/ui/success-animation';
+import {
+  BottomSheet,
+  BottomSheetContent,
+  BottomSheetHeader,
+  BottomSheetTitle,
+  BottomSheetDescription,
+  BottomSheetBody,
+  BottomSheetFooter,
+} from '@/components/ui/bottom-sheet';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/lib/store/authStore';
 import { usePriceStore } from '@/lib/store/priceStore';
 import { useWalletStore } from '@/lib/store/walletStore';
 import { apiClient } from '@/lib/api/client';
-import { TestnetBadge } from '@/components/TestnetBadge';
-import { Loader2, Calculator, AlertCircle, CheckCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface MintFormProps {
   walletAddress: string;
@@ -23,62 +30,43 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [transactionResult, setTransactionResult] = useState<{ success: boolean; txHash?: string; error?: string } | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [txResult, setTxResult] = useState<{ txHash?: string } | null>(null);
 
   const { toast } = useToast();
   const { retrieveKeypairForTransaction, setError: clearAuthError } = useAuthStore();
   const { piPrice } = usePriceStore();
   const { balance } = useWalletStore();
-  const isTestnet = apiClient.isTestnetMode();
 
-  // Calculate USDP output and fees based on off-chain USD reserve model.
-  // The frontend still illustrates an overcollateralization buffer, but the
-  // actual peg is maintained off-chain via the issuer's USD reserves.
-  const OVERCOLLATERALIZATION_RATIO = 1.15; // 115% illustrative overcollateralization
+  // Calculations
+  const OVERCOLLATERALIZATION_RATIO = 1.15;
   const piAmount = parseFloat(amount) || 0;
-  const usdValue = piAmount * (piPrice || 0); // Convert Pi to USD value
-  const mintFee = usdValue * 0.003; // 0.3% fee on USD value
-  const usdpOutput = usdValue - mintFee; // USDP output (1 USDP = 1 USD)
-  const piRequired = piAmount * OVERCOLLATERALIZATION_RATIO; // Pi required with 115% overcollateralization
-  const overcollateralizationAmount = piRequired - piAmount; // Extra Pi locked
-
-  // Check if user has sufficient Pi balance (accounting for the displayed buffer)
+  const usdValue = piAmount * (piPrice || 0);
+  const mintFee = usdValue * 0.003;
+  const pusdOutput = usdValue - mintFee;
+  const piRequired = piAmount * OVERCOLLATERALIZATION_RATIO;
   const piBalance = parseFloat(balance?.pi?.amount || '0');
   const hasSufficientBalance = piBalance >= piRequired;
 
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setAmount(value);
-      setError(null);
-    }
-  };
-
-  const handleMint = async () => {
+  const handleMint = () => {
     if (!amount || piAmount <= 0) {
-      setError('Please enter a valid amount');
+      setError('Enter an amount');
       return;
     }
-
     if (!hasSufficientBalance) {
-      setError('Insufficient Pi balance');
+      setError('Insufficient balance');
       return;
     }
-
     setShowConfirmation(true);
   };
 
   const confirmMint = async () => {
     setIsLoading(true);
     setError(null);
-    setTransactionResult(null);
 
     try {
-      // Retrieve keypair using passkey authentication
       const keypair = await retrieveKeypairForTransaction(walletAddress);
-      
-      // Call mint API with keypair data using apiClient (includes Authorization header)
       const result = await apiClient.mint({
         amount: piAmount,
         walletAddress: keypair.walletAddress,
@@ -86,29 +74,22 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
       });
 
       if (!result.success) {
-        throw new Error(result.error || 'Mint transaction failed');
+        throw new Error(result.error || 'Transaction failed');
       }
 
-      const transactionData = result.data as { success: boolean; txHash?: string; error?: string } | null;
-      setTransactionResult(transactionData || { success: true });
+      const transactionData = result.data as { success: boolean; txHash?: string } | null;
+      setTxResult(transactionData || { txHash: undefined });
       setShowConfirmation(false);
-      
-      toast({
-        title: 'Mint Successful',
-        description: `Successfully minted ${usdpOutput.toFixed(7)} USDP tokens${isTestnet ? ' on testnet' : ''}`,
-      });
+      setShowSuccess(true);
 
-      // Refresh balance
       if (onTransactionComplete) {
         onTransactionComplete();
       }
-
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Mint transaction failed';
+      const errorMessage = err instanceof Error ? err.message : 'Transaction failed';
       setError(errorMessage);
-      
       toast({
-        title: 'Mint Failed',
+        title: 'Transaction Failed',
         description: errorMessage,
         variant: 'destructive',
       });
@@ -117,260 +98,159 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
     }
   };
 
-  const handleRetry = () => {
-    setError(null);
-    setTransactionResult(null);
+  const handleSuccessComplete = () => {
+    setShowSuccess(false);
+    setAmount('');
+    setTxResult(null);
   };
 
-  if (transactionResult) {
+  const handleMax = () => {
+    const maxPi = piBalance / OVERCOLLATERALIZATION_RATIO;
+    setAmount(maxPi.toFixed(2));
+  };
+
+  // Success state
+  if (showSuccess) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            Mint Successful
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Transaction Hash:</span>
-              <span className="font-mono text-sm">{transactionResult.txHash || 'N/A'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">USDP Minted:</span>
-              <span className="font-semibold">{usdpOutput.toFixed(7)} USDP</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Fee Paid:</span>
-              <span className="text-sm">{mintFee.toFixed(7)} USDP</span>
-            </div>
-          </div>
-          <Button onClick={handleRetry} className="w-full">
-            Mint More
+      <div className="flex flex-col h-full">
+        <SuccessAnimation
+          title="Mint Complete"
+          subtitle={txResult?.txHash ? `Transaction: ${txResult.txHash.slice(0, 8)}...` : 'Your PUSD is ready'}
+          amount={pusdOutput.toFixed(2)}
+          currency="PUSD"
+        />
+        <div className="mt-auto px-4 pb-4">
+          <Button onClick={handleSuccessComplete} className="w-full" size="lg">
+            Done
           </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (showConfirmation) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Confirm Mint Transaction</CardTitle>
-          <CardDescription>Review your transaction details before confirming</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="space-y-2">
-                <div>{error}</div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setError(null);
-                    clearAuthError(null);
-                    confirmMint();
-                  }}
-                  disabled={isLoading}
-                  className="mt-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Retrying...
-                    </>
-                  ) : (
-                    'Retry Authentication'
-                  )}
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Pi Amount:</span>
-              <span className="font-semibold">{piAmount.toFixed(7)} Pi</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">USD Value:</span>
-              <span className="text-sm">${usdValue.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Mint Fee (0.3%):</span>
-              <span className="text-sm">${mintFee.toFixed(7)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">USDP Output:</span>
-              <span className="font-semibold text-green-600">{usdpOutput.toFixed(7)} USDP</span>
-            </div>
-            <div className="border-t pt-2 mt-2">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-sm font-medium text-muted-foreground">Overcollateralization (115%):</span>
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground pl-2">
-                <span>Base Pi Amount:</span>
-                <span>{piAmount.toFixed(7)} Pi</span>
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground pl-2">
-                <span>Extra Pi Locked (15%):</span>
-                <span className="text-orange-600">+{overcollateralizationAmount.toFixed(7)} Pi</span>
-              </div>
-              <div className="flex justify-between text-sm font-semibold mt-1 pt-1 border-t">
-                <span>Total Pi Required:</span>
-                <span className="text-blue-600">{piRequired.toFixed(7)} Pi</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2 italic">
-                Overcollateralization provides security by locking extra Pi as collateral for your USDP tokens.
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button 
-              onClick={confirmMint} 
-              disabled={isLoading}
-              className="flex-1"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                'Confirm Mint'
-              )}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setShowConfirmation(false);
-                setError(null);
-                clearAuthError(null);
-              }}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="h-5 w-5" />
-              Mint USDP Tokens
-            </CardTitle>
-            <CardDescription>
-              Convert your Pi tokens to USDP stablecoin
-            </CardDescription>
-          </div>
-          {isTestnet && <TestnetBadge />}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {isTestnet && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              On testnet, this simulates sending Pi into the USDP reserve and receiving USDP at a 1:1 USD reference rate using oracle pricing.
-            </AlertDescription>
-          </Alert>
-        )}
+    <div className="flex flex-col h-full">
+      {/* Amount Input */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4">
+        <NumericInput
+          value={amount}
+          onChange={(val) => {
+            setAmount(val);
+            setError(null);
+          }}
+          currency="Pi"
+          secondaryValue={pusdOutput > 0 ? `${pusdOutput.toFixed(2)}` : undefined}
+          secondaryCurrency={pusdOutput > 0 ? 'PUSD' : undefined}
+          maxValue={piBalance / OVERCOLLATERALIZATION_RATIO}
+          onMax={handleMax}
+        />
+
+        {/* Error message */}
         {error && (
-          <Alert variant="destructive">
+          <div className="flex items-center gap-2 text-destructive text-sm mt-2">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        <div className="space-y-2">
-          <Label htmlFor="pi-amount">Pi Amount</Label>
-          <Input
-            id="pi-amount"
-            type="text"
-            placeholder="0.0000000"
-            value={amount}
-            onChange={handleAmountChange}
-            disabled={isLoading}
-          />
-          <p className="text-xs text-muted-foreground">
-            Available: {piBalance.toFixed(7)} Pi
-          </p>
-        </div>
-
-        {amount && piAmount > 0 && (
-          <div className="space-y-2 p-3 bg-muted rounded-lg">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Pi Amount:</span>
-              <span>{piAmount.toFixed(7)} Pi</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">USD Value:</span>
-              <span>${usdValue.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Mint Fee (0.3%):</span>
-              <span>${mintFee.toFixed(7)}</span>
-            </div>
-            <div className="flex justify-between text-sm font-semibold">
-              <span>USDP Output:</span>
-              <span className="text-green-600">{usdpOutput.toFixed(7)} USDP</span>
-            </div>
-            <div className="border-t pt-2 mt-2">
-              <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                <span>Overcollateralization (115%):</span>
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground pl-2">
-                <span>Base:</span>
-                <span>{piAmount.toFixed(7)} Pi</span>
-              </div>
-              <div className="flex justify-between text-xs text-orange-600 pl-2">
-                <span>Extra (15%):</span>
-                <span>+{overcollateralizationAmount.toFixed(7)} Pi</span>
-              </div>
-              <div className="flex justify-between text-sm font-medium mt-1 pt-1 border-t">
-                <span>Total Pi Required:</span>
-                <span className="text-blue-600">{piRequired.toFixed(7)} Pi</span>
-              </div>
-            </div>
+            <span>{error}</span>
           </div>
         )}
+      </div>
 
-        <Button 
-          onClick={handleMint} 
-          disabled={isLoading || !amount || piAmount <= 0 || !hasSufficientBalance}
+      {/* Info row */}
+      {piAmount > 0 && (
+        <div className="px-4 pb-4">
+          <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-muted/50 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Info className="h-4 w-4" />
+              <span>Fee (0.3%)</span>
+            </div>
+            <span className="font-mono text-foreground">${mintFee.toFixed(4)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Action button */}
+      <div className="px-4 pb-4 safe-area-bottom">
+        <Button
+          onClick={handleMint}
+          disabled={!amount || piAmount <= 0}
           className="w-full"
+          size="lg"
         >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
-            </>
-          ) : (
-            'Mint USDP'
-          )}
+          {!hasSufficientBalance && piAmount > 0 ? 'Insufficient Balance' : 'Continue'}
         </Button>
+      </div>
 
-        {!hasSufficientBalance && piAmount > 0 && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Insufficient Pi balance. You need {piAmount.toFixed(7)} Pi but only have {piBalance.toFixed(7)} Pi.
-            </AlertDescription>
-          </Alert>
-        )}
-      </CardContent>
-    </Card>
+      {/* Confirmation Bottom Sheet */}
+      <BottomSheet open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <BottomSheetContent>
+          <BottomSheetHeader>
+            <BottomSheetTitle>Confirm Mint</BottomSheetTitle>
+            <BottomSheetDescription>
+              Review the details before confirming
+            </BottomSheetDescription>
+          </BottomSheetHeader>
+
+          <BottomSheetBody>
+            {error && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 text-destructive text-sm mb-4">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="flex justify-between py-3 border-b border-border">
+                <span className="text-muted-foreground">You pay</span>
+                <span className="font-mono font-medium">{piAmount.toFixed(4)} Pi</span>
+              </div>
+              <div className="flex justify-between py-3 border-b border-border">
+                <span className="text-muted-foreground">Collateral (115%)</span>
+                <span className="font-mono text-sm">{piRequired.toFixed(4)} Pi</span>
+              </div>
+              <div className="flex justify-between py-3 border-b border-border">
+                <span className="text-muted-foreground">Fee</span>
+                <span className="font-mono text-sm">${mintFee.toFixed(4)}</span>
+              </div>
+              <div className="flex justify-between py-3">
+                <span className="font-medium">You receive</span>
+                <span className="font-mono font-semibold text-success">
+                  {pusdOutput.toFixed(4)} PUSD
+                </span>
+              </div>
+            </div>
+          </BottomSheetBody>
+
+          <BottomSheetFooter>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowConfirmation(false);
+                  setError(null);
+                  clearAuthError(null);
+                }}
+                disabled={isLoading}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmMint}
+                disabled={isLoading}
+                className="flex-1"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing
+                  </>
+                ) : (
+                  'Confirm'
+                )}
+              </Button>
+            </div>
+          </BottomSheetFooter>
+        </BottomSheetContent>
+      </BottomSheet>
+    </div>
   );
 }
