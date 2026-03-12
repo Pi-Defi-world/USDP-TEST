@@ -73,63 +73,75 @@ export function LandingFeatures() {
           {/* Top row: 2 equal cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Card 1 - with image */}
-            <div
-              className={cn(
-                "group relative rounded-2xl border border-border bg-card overflow-hidden transition-all duration-500",
-                "hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5",
-                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-              )}
-              style={{ transitionDelay: '0ms' }}
-            >
-              <div className="relative h-44 overflow-hidden">
-                <Image
-                  src={features[0].image!}
-                  alt={features[0].imageAlt}
-                  fill
-                  className="object-cover opacity-60 group-hover:opacity-75 transition-opacity duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card" />
-              </div>
-              <div className="p-6 flex items-start gap-4">
-                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                  <features[0].icon className="w-5 h-5 text-accent" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-base text-foreground mb-1">{features[0].title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{features[0].description}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2 - no image, accent */}
-            <div
-              className={cn(
-                "group relative rounded-2xl border border-accent/20 bg-accent/5 p-6 transition-all duration-500",
-                "hover:border-accent/40 hover:bg-accent/8",
-                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-              )}
-              style={{ transitionDelay: '100ms' }}
-            >
-              <div className="flex items-start gap-4 h-full">
-                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center">
-                  <features[1].icon className="w-5 h-5 text-accent" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-base text-foreground mb-2">{features[1].title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{features[1].description}</p>
-                  <div className="mt-6 grid grid-cols-2 gap-3 text-xs">
-                    <div className="rounded-xl bg-background/50 border border-border px-3 py-2 font-mono text-center">
-                      <span className="text-accent font-semibold">~5s</span>
-                      <p className="text-muted-foreground mt-0.5">to mint</p>
+            {(() => {
+              const f = features[0];
+              const Icon = f.icon;
+              return (
+                <div
+                  className={cn(
+                    "group relative rounded-2xl border border-border bg-card overflow-hidden transition-all duration-500",
+                    "hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5",
+                    isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                  )}
+                  style={{ transitionDelay: '0ms' }}
+                >
+                  <div className="relative h-44 overflow-hidden">
+                    <Image
+                      src={f.image!}
+                      alt={f.imageAlt}
+                      fill
+                      className="object-cover opacity-60 group-hover:opacity-75 transition-opacity duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card" />
+                  </div>
+                  <div className="p-6 flex items-start gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-accent" />
                     </div>
-                    <div className="rounded-xl bg-background/50 border border-border px-3 py-2 font-mono text-center">
-                      <span className="text-accent font-semibold">~5s</span>
-                      <p className="text-muted-foreground mt-0.5">to redeem</p>
+                    <div>
+                      <h3 className="font-semibold text-base text-foreground mb-1">{f.title}</h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">{f.description}</p>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
+              );
+            })()}
+
+            {/* Card 2 - no image, accent */}
+            {(() => {
+              const f = features[1];
+              const Icon = f.icon;
+              return (
+                <div
+                  className={cn(
+                    "group relative rounded-2xl border border-accent/20 bg-accent/5 p-6 transition-all duration-500",
+                    "hover:border-accent/40",
+                    isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                  )}
+                  style={{ transitionDelay: '100ms' }}
+                >
+                  <div className="flex items-start gap-4 h-full">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-accent" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-base text-foreground mb-2">{f.title}</h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">{f.description}</p>
+                      <div className="mt-6 grid grid-cols-2 gap-3 text-xs">
+                        <div className="rounded-xl bg-background/50 border border-border px-3 py-2 font-mono text-center">
+                          <span className="text-accent font-semibold">~5s</span>
+                          <p className="text-muted-foreground mt-0.5">to mint</p>
+                        </div>
+                        <div className="rounded-xl bg-background/50 border border-border px-3 py-2 font-mono text-center">
+                          <span className="text-accent font-semibold">~5s</span>
+                          <p className="text-muted-foreground mt-0.5">to redeem</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Bottom row: 2 image cards */}
