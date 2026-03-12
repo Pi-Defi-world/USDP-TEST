@@ -1,39 +1,59 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
 import Script from 'next/script';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { PiProvider } from '@/components/providers/pi-provider';
-import { Navbar } from '@/components/navbar';
 
-const inter = Inter({ subsets: ['latin'] });
+const geistSans = Geist({
+  subsets: ['latin'],
+  variable: '--font-geist-sans',
+});
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
+});
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: 'USDP Platform',
-  description: 'A production-grade USD-pegged stablecoin built on Pi Network',
+  title: 'PUSD',
+  description: 'The stablecoin for Pi Network. Instant. Stable. Secure.',
+  keywords: ['stablecoin', 'Pi Network', 'PUSD', 'cryptocurrency', 'DeFi'],
+  authors: [{ name: 'PUSD' }],
+  openGraph: {
+    title: 'PUSD',
+    description: 'The stablecoin for Pi Network',
+    type: 'website',
+  },
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fafaf9' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0b' },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} pb-20 lg:pb-0`}>
-      <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
-      <Script id="pi-init" strategy="beforeInteractive">
-        {`
-          const Pi = window.Pi;
-          Pi.init({ version: "2.0",  sandbox: true});
-        `}
-      </Script>
+    <html lang="en" className="scroll-smooth">
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
+        <Script src="https://sdk.minepi.com/pi-sdk.js" strategy="beforeInteractive" />
+        <Script id="pi-init" strategy="beforeInteractive">
+          {`
+            const Pi = window.Pi;
+            Pi.init({ version: "2.0", sandbox: true });
+          `}
+        </Script>
         <PiProvider>
-          <Navbar />
           {children}
           <Toaster />
         </PiProvider>

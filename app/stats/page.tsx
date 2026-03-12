@@ -1,17 +1,14 @@
 'use client';
 
- 
-
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TestnetBadge } from '@/components/TestnetBadge';
-import { ReservePoolBreakdown } from '@/components/ReservePoolBreakdown';
 import { apiClient } from '@/lib/api/client';
 import { ReserveStatus, CollateralBreakdown } from '@/types';
-import { TrendingUp, DollarSign, Users, Activity, Shield, Zap } from 'lucide-react';
+import { TrendingUp, DollarSign, Users, Activity, Shield, Zap, ArrowLeft } from 'lucide-react';
+import { AppShell } from '@/components/app/app-shell';
+import Link from 'next/link';
 
 export default function StatsPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -35,10 +32,7 @@ export default function StatsPage() {
     isFullyBacked: false,
   });
 
-  const assetLabel = isTestnet ? 'USD-TEST' : 'USDC';
-
   useEffect(() => {
-    // Check if we're in testnet mode
     const testnetMode = apiClient.isTestnetMode();
     setIsTestnet(testnetMode);
 
@@ -46,7 +40,6 @@ export default function StatsPage() {
       try {
         setIsLoading(true);
 
-        // Fetch stats from API
         const statsResponse = await apiClient.getStatsLegacy();
         if (statsResponse.success && statsResponse.data) {
           const d = statsResponse.data as {
@@ -74,7 +67,6 @@ export default function StatsPage() {
           });
         }
 
-        // Fetch testnet-specific data if in testnet mode
         if (testnetMode) {
           try {
             const reserveResponse = await apiClient.getReserveStatus();
@@ -112,7 +104,6 @@ export default function StatsPage() {
         }
       } catch (error) {
         console.error('Failed to load stats:', error);
-        // Fallback to default values
       } finally {
         setIsLoading(false);
       }
@@ -121,247 +112,171 @@ export default function StatsPage() {
     loadStats();
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
-        <div className="container mx-auto py-8">
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <Skeleton className="h-8 w-64 mx-auto" />
-              <Skeleton className="h-4 w-96 mx-auto" />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <Card key={i} className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-                  <CardHeader className="space-y-0 pb-2">
-                    <Skeleton className="h-4 w-24" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-8 w-32 mb-2" />
-                    <Skeleton className="h-3 w-20" />
-                  </CardContent>
+  return (
+    <AppShell title="Protocol Stats" showBack backHref="/dashboard">
+      <div className="container mx-auto px-4 py-4">
+        {isLoading ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="p-4">
+                  <Skeleton className="h-4 w-20 mb-2" />
+                  <Skeleton className="h-6 w-24" />
                 </Card>
               ))}
             </div>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-4">
-      <div className="container mx-auto py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100">
-              USDP Statistics
-            </h1>
-            {isTestnet && <TestnetBadge />}
-          </div>
-          <p className="text-slate-600 dark:text-slate-300">
-            Real-time data from the USDP stablecoin system
-          </p>
-        </div>
-
-        {/* Reserve Status */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {isTestnet && collateralBreakdown ? 'Total Pi (Reserve + Pool)' : 'Pi Reserve'}
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {isTestnet && collateralBreakdown 
-                  ? `${collateralBreakdown.total.piAmount} Pi`
-                  : `${stats.totalPiReserve} Pi`}
+        ) : (
+          <div className="space-y-6 animate-fade-in">
+            {/* Testnet Badge */}
+            {isTestnet && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 text-accent text-sm">
+                <Zap className="w-4 h-4" />
+                <span>Running on Pi Network Testnet</span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                ${isTestnet && collateralBreakdown 
-                  ? collateralBreakdown.total.totalValue
-                  : stats.totalUsdReserve} USD
-              </p>
-              {isTestnet && collateralBreakdown && (
+            )}
+
+            {/* Primary Metrics */}
+            <div className="grid grid-cols-2 gap-3">
+              <Card className="p-4 bg-card border-border">
+                <div className="flex items-center gap-2 mb-2">
+                  <Shield className="w-4 h-4 text-accent" />
+                  <span className="text-xs text-muted-foreground">Backing</span>
+                </div>
+                <p className="text-xl font-bold tabular-nums">{stats.backingRatio}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Reserve: {collateralBreakdown.reserve.piAmount} Pi | Pool: {collateralBreakdown.pool.piAmount} Pi
+                  {stats.isFullyBacked ? 'Fully backed' : 'Under-collateralized'}
                 </p>
-              )}
-            </CardContent>
-          </Card>
+              </Card>
 
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">USDP Supply</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUSDPSupply} USDP</div>
-              <p className="text-xs text-muted-foreground">
-                ${stats.totalUSDPUsdValue} USD
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Backing Ratio</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.backingRatio}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.isFullyBacked ? 'Fully Backed' : 'Under-collateralized'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pi Price</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${stats.piPrice.toFixed(6)}</div>
-              <p className="text-xs text-muted-foreground">
-                Real-time price
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Business Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Volume</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${stats.totalVolume}</div>
-              <p className="text-xs text-muted-foreground">
-                USD traded
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Fees Collected</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalFeesCollected} USDP</div>
-              <p className="text-xs text-muted-foreground">
-                Protocol revenue
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalTransactions}</div>
-              <p className="text-xs text-muted-foreground">
-                All operations
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Holders</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalHolders}</div>
-              <p className="text-xs text-muted-foreground">
-                Unique addresses
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Transaction Breakdown */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-            <CardHeader>
-              <CardTitle>Transaction Breakdown</CardTitle>
-              <CardDescription>
-                Mint and redeem operations
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="h-3 w-3 rounded-full bg-green-500" />
-                  <span className="text-sm font-medium">Mints</span>
+              <Card className="p-4 bg-card border-border">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="w-4 h-4 text-accent" />
+                  <span className="text-xs text-muted-foreground">PUSD Supply</span>
                 </div>
-                <span className="text-sm font-bold">{stats.totalMints}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="h-3 w-3 rounded-full bg-red-500" />
-                  <span className="text-sm font-medium">Redeems</span>
-                </div>
-                <span className="text-sm font-bold">{stats.totalRedeems}</span>
-              </div>
-            </CardContent>
-          </Card>
+                <p className="text-xl font-bold tabular-nums">{parseFloat(stats.totalUSDPSupply).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-1">${stats.totalUSDPUsdValue}</p>
+              </Card>
 
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-            <CardHeader>
-              <CardTitle>System Status</CardTitle>
-              <CardDescription>
-                Current system health
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Backing Status</span>
-                <Badge variant={stats.isFullyBacked ? 'default' : 'destructive'}>
-                  {stats.isFullyBacked ? 'Healthy' : 'At Risk'}
-                </Badge>
+              <Card className="p-4 bg-card border-border">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-accent" />
+                  <span className="text-xs text-muted-foreground">Pi Price</span>
+                </div>
+                <p className="text-xl font-bold tabular-nums">${stats.piPrice.toFixed(4)}</p>
+                <p className="text-xs text-muted-foreground mt-1">USD</p>
+              </Card>
+
+              <Card className="p-4 bg-card border-border">
+                <div className="flex items-center gap-2 mb-2">
+                  <Activity className="w-4 h-4 text-accent" />
+                  <span className="text-xs text-muted-foreground">Volume</span>
+                </div>
+                <p className="text-xl font-bold tabular-nums">${stats.totalVolume}</p>
+                <p className="text-xs text-muted-foreground mt-1">All time</p>
+              </Card>
+            </div>
+
+            {/* Reserve Composition */}
+            <Card className="p-4 bg-card border-border">
+              <h3 className="font-medium mb-4">Reserve Composition</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-sm mb-1.5">
+                    <span className="text-muted-foreground">Pi Collateral</span>
+                    <span className="tabular-nums font-medium">
+                      {collateralBreakdown?.total.piAmount || stats.totalPiReserve} Pi
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                    <div 
+                      className="h-full rounded-full bg-accent transition-all duration-500" 
+                      style={{ width: `${collateralBreakdown?.total.piRatio || 60}%` }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1.5">
+                    <span className="text-muted-foreground">{isTestnet ? 'USD-TEST' : 'USDC'}</span>
+                    <span className="tabular-nums font-medium">
+                      {collateralBreakdown?.total.usdTestAmount || stats.totalUsdReserve}
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                    <div 
+                      className="h-full rounded-full bg-foreground/30 transition-all duration-500" 
+                      style={{ width: `${collateralBreakdown?.total.usdcRatio || 40}%` }}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Reserve Surplus</span>
-                <span className="text-sm font-bold text-green-600">
-                  ${stats.reserveSurplus}
-                </span>
+            </Card>
+
+            {/* Activity Stats */}
+            <Card className="p-4 bg-card border-border">
+              <h3 className="font-medium mb-4">Protocol Activity</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-2xl font-bold tabular-nums">{stats.totalMints}</p>
+                  <p className="text-xs text-muted-foreground">Total Mints</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold tabular-nums">{stats.totalRedeems}</p>
+                  <p className="text-xs text-muted-foreground">Total Redeems</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold tabular-nums">{stats.totalTransactions}</p>
+                  <p className="text-xs text-muted-foreground">Transactions</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold tabular-nums">{stats.totalHolders}</p>
+                  <p className="text-xs text-muted-foreground">Holders</p>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Network</span>
-                <Badge variant="secondary">
-                  <Zap className="h-3 w-3 mr-1" />
-                  {isTestnet ? 'Pi Testnet' : 'Pi Network'}
-                </Badge>
+            </Card>
+
+            {/* Protocol Revenue */}
+            <Card className="p-4 bg-card border-border">
+              <h3 className="font-medium mb-4">Protocol Revenue</h3>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold tabular-nums">{stats.totalFeesCollected}</p>
+                <span className="text-sm text-muted-foreground">PUSD collected</span>
               </div>
-              {isTestnet && (
+              <p className="text-xs text-muted-foreground mt-2">
+                0.3% fee on mint and redeem operations
+              </p>
+            </Card>
+
+            {/* System Status */}
+            <Card className="p-4 bg-card border-border">
+              <h3 className="font-medium mb-4">System Status</h3>
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Collateral Asset</span>
-                  <span className="text-sm font-bold text-yellow-600 dark:text-yellow-400">
-                    {assetLabel}
+                  <span className="text-sm text-muted-foreground">Network</span>
+                  <Badge variant="secondary" className="font-normal">
+                    {isTestnet ? 'Pi Testnet' : 'Pi Mainnet'}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Health</span>
+                  <Badge 
+                    variant={stats.isFullyBacked ? 'default' : 'destructive'}
+                    className="font-normal"
+                  >
+                    {stats.isFullyBacked ? 'Healthy' : 'At Risk'}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Surplus</span>
+                  <span className="text-sm font-medium text-accent tabular-nums">
+                    +${stats.reserveSurplus}
                   </span>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Testnet-specific: Reserve/Pool Breakdown */}
-        {isTestnet && collateralBreakdown && (
-          <div className="mb-8">
-            <ReservePoolBreakdown breakdown={collateralBreakdown} isTestnet={isTestnet} />
+              </div>
+            </Card>
           </div>
         )}
       </div>
-    </div>
+    </AppShell>
   );
 }

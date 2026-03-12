@@ -2,70 +2,147 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api/client';
-import { TestnetBadge } from '@/components/TestnetBadge';
+import { usePi } from '@/components/providers/pi-provider';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Network } from 'lucide-react';
+import { AlertCircle, Network, LogOut, User, Shield, HelpCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function SettingsPage() {
   const isTestnet = apiClient.isTestnetMode();
+  const { user, signOut, isAuthenticated } = usePi();
+  const router = useRouter();
   const usdTestAssetCode = process.env.NEXT_PUBLIC_USD_TEST_ASSET_CODE || 'USDTEST';
 
-  return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Settings</h1>
-        <p className="text-muted-foreground">Manage your account settings and security</p>
-      </div>
+  const handleSignOut = () => {
+    signOut();
+    router.push('/');
+  };
 
-      {/* Testnet Configuration Section */}
-      {isTestnet && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Network className="h-5 w-5" />
-              <CardTitle>Testnet Configuration</CardTitle>
-              <TestnetBadge />
+  return (
+    <div className="space-y-6 pb-8 animate-fade-in">
+      {/* Account Section */}
+      {isAuthenticated && (
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                <User className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Account</CardTitle>
+                <CardDescription className="text-sm">
+                  {user?.username || 'Connected'}
+                </CardDescription>
+              </div>
             </div>
-            <CardDescription>
-              Testnet-specific settings and information
-            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium">Network</Label>
-                <p className="text-sm text-muted-foreground mt-1">Pi Testnet</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Testnet Label</Label>
-                <p className="text-sm text-muted-foreground font-mono mt-1">{usdTestAssetCode}</p>
+          <CardContent className="pt-0">
+            <Button 
+              variant="outline" 
+              onClick={handleSignOut}
+              className="w-full justify-start gap-2 text-destructive hover:text-destructive"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Network Section */}
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+              <Network className="w-5 h-5 text-accent" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Network</CardTitle>
+              <CardDescription className="text-sm">
+                {isTestnet ? 'Pi Testnet' : 'Pi Mainnet'}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        {isTestnet && (
+          <CardContent className="pt-0 space-y-4">
+            <div className="p-3 rounded-lg bg-secondary/50">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Test Asset</span>
+                <span className="font-mono text-xs">{usdTestAssetCode}</span>
               </div>
             </div>
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                On testnet, all assets are for development only. The production system uses an off-chain USD
-                reserve (cash + T-bills) to back USDP; there is no 70/30 Pi/USDC pool in the current design.
+            <Alert className="border-accent/20 bg-accent/5">
+              <AlertCircle className="h-4 w-4 text-accent" />
+              <AlertDescription className="text-sm text-muted-foreground">
+                Testnet assets are for development only. Production uses off-chain USD reserves.
               </AlertDescription>
             </Alert>
           </CardContent>
-        </Card>
-      )}
+        )}
+      </Card>
 
-      {!isTestnet && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Account</CardTitle>
-            <CardDescription>
-              Manage your account and network settings.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">You are connected to mainnet.</p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Security Section */}
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+              <Shield className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Security</CardTitle>
+              <CardDescription className="text-sm">
+                Protocol security information
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="space-y-3">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">Backing Ratio</span>
+              <span className="font-medium">115%</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">Protocol Fee</span>
+              <span className="font-medium">0.3%</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Help Section */}
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+              <HelpCircle className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Help</CardTitle>
+              <CardDescription className="text-sm">
+                Documentation and support
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-2">
+          <Button variant="ghost" asChild className="w-full justify-start">
+            <Link href="/developers">Developer Documentation</Link>
+          </Button>
+          <Button variant="ghost" asChild className="w-full justify-start">
+            <Link href="/help/testnet">Testnet Guide</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Version */}
+      <div className="text-center text-xs text-muted-foreground pt-4">
+        PUSD v1.0.0
+      </div>
     </div>
   );
 }
