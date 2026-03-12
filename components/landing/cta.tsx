@@ -40,10 +40,10 @@ export function LandingCTA() {
           )}
         >
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-balance mb-6">
-            Ready to get started?
+            Ready to hold stable value?
           </h2>
           <p className="text-muted-foreground text-lg mb-10 max-w-md mx-auto leading-relaxed">
-            Connect your Pi wallet and start minting PUSD in seconds. No complex setup required.
+            Open the app and get PUSD in seconds. All you need is your Pi wallet.
           </p>
           <Button size="lg" asChild className="text-base px-10 h-13 rounded-xl">
             <Link href="/dashboard">

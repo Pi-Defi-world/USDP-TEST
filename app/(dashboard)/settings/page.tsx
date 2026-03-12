@@ -62,23 +62,17 @@ export default function SettingsPage() {
             <div>
               <CardTitle className="text-base">Network</CardTitle>
               <CardDescription className="text-sm">
-                {isTestnet ? 'Pi Testnet' : 'Pi Mainnet'}
+                {isTestnet ? 'Preview mode' : 'Live'}
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         {isTestnet && (
           <CardContent className="pt-0 space-y-4">
-            <div className="p-3 rounded-lg bg-secondary/50">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Test Asset</span>
-                <span className="font-mono text-xs">{usdTestAssetCode}</span>
-              </div>
-            </div>
             <Alert className="border-accent/20 bg-accent/5">
               <AlertCircle className="h-4 w-4 text-accent" />
               <AlertDescription className="text-sm text-muted-foreground">
-                Testnet assets are for development only. Production uses off-chain USD reserves.
+                You are using preview mode. Assets here are not real money.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -93,9 +87,9 @@ export default function SettingsPage() {
               <Shield className="w-5 h-5 text-muted-foreground" />
             </div>
             <div>
-              <CardTitle className="text-base">Security</CardTitle>
+              <CardTitle className="text-base">How it works</CardTitle>
               <CardDescription className="text-sm">
-                Protocol security information
+                PUSD is always backed
               </CardDescription>
             </div>
           </div>
@@ -103,11 +97,11 @@ export default function SettingsPage() {
         <CardContent className="pt-0">
           <div className="space-y-3">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Backing Ratio</span>
+              <span className="text-muted-foreground">Reserve ratio</span>
               <span className="font-medium">115%</span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Protocol Fee</span>
+              <span className="text-muted-foreground">Fee</span>
               <span className="font-medium">0.3%</span>
             </div>
           </div>
@@ -124,17 +118,17 @@ export default function SettingsPage() {
             <div>
               <CardTitle className="text-base">Help</CardTitle>
               <CardDescription className="text-sm">
-                Documentation and support
+                Learn more about PUSD
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="pt-0 space-y-2">
           <Button variant="ghost" asChild className="w-full justify-start">
-            <Link href="/developers">Developer Documentation</Link>
+            <Link href="/developers">For developers</Link>
           </Button>
           <Button variant="ghost" asChild className="w-full justify-start">
-            <Link href="/help/testnet">Testnet Guide</Link>
+            <Link href="/help/testnet">Getting started</Link>
           </Button>
         </CardContent>
       </Card>

@@ -88,7 +88,7 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
       const errorMessage = err instanceof Error ? err.message : 'Transaction failed';
       setError(errorMessage);
       toast({
-        title: 'Transaction Failed',
+        title: 'Something went wrong',
         description: errorMessage,
         variant: 'destructive',
       });
@@ -112,8 +112,8 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
     return (
       <div className="flex flex-col h-full">
         <SuccessAnimation
-          title="Redeem Complete"
-          subtitle={txResult?.txHash ? `Transaction: ${txResult.txHash.slice(0, 8)}...` : 'Your Pi is ready'}
+          title="Done"
+          subtitle={txResult?.txHash ? `ID: ${txResult.txHash.slice(0, 8)}...` : 'Your Pi is ready'}
           amount={piOutput.toFixed(4)}
           currency="Pi"
         />
@@ -181,9 +181,9 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
       <BottomSheet open={showConfirmation} onOpenChange={setShowConfirmation}>
         <BottomSheetContent>
           <BottomSheetHeader>
-            <BottomSheetTitle>Confirm Redeem</BottomSheetTitle>
+            <BottomSheetTitle>Review</BottomSheetTitle>
             <BottomSheetDescription>
-              Review the details before confirming
+              Make sure everything looks right
             </BottomSheetDescription>
           </BottomSheetHeader>
 
@@ -197,11 +197,11 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
 
             <div className="space-y-3">
               <div className="flex justify-between py-3 border-b border-border">
-                <span className="text-muted-foreground">You redeem</span>
+                <span className="text-muted-foreground">You convert</span>
                 <span className="font-mono font-medium">{pusdAmount.toFixed(4)} PUSD</span>
               </div>
               <div className="flex justify-between py-3 border-b border-border">
-                <span className="text-muted-foreground">USD Value</span>
+                <span className="text-muted-foreground">Value</span>
                 <span className="font-mono text-sm">${usdValue.toFixed(2)}</span>
               </div>
               <div className="flex justify-between py-3 border-b border-border">

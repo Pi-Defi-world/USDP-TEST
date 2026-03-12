@@ -132,7 +132,7 @@ export default function StatsPage() {
             {isTestnet && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 text-accent text-sm">
                 <Zap className="w-4 h-4" />
-                <span>Running on Pi Network Testnet</span>
+                <span>Preview mode</span>
               </div>
             )}
 
@@ -141,18 +141,18 @@ export default function StatsPage() {
               <Card className="p-4 bg-card border-border">
                 <div className="flex items-center gap-2 mb-2">
                   <Shield className="w-4 h-4 text-accent" />
-                  <span className="text-xs text-muted-foreground">Backing</span>
+                  <span className="text-xs text-muted-foreground">Backed</span>
                 </div>
                 <p className="text-xl font-bold tabular-nums">{stats.backingRatio}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {stats.isFullyBacked ? 'Fully backed' : 'Under-collateralized'}
+                  {stats.isFullyBacked ? 'Healthy' : 'Low reserves'}
                 </p>
               </Card>
 
               <Card className="p-4 bg-card border-border">
                 <div className="flex items-center gap-2 mb-2">
                   <DollarSign className="w-4 h-4 text-accent" />
-                  <span className="text-xs text-muted-foreground">PUSD Supply</span>
+                  <span className="text-xs text-muted-foreground">PUSD out there</span>
                 </div>
                 <p className="text-xl font-bold tabular-nums">{parseFloat(stats.totalUSDPSupply).toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground mt-1">${stats.totalUSDPUsdValue}</p>
@@ -164,7 +164,7 @@ export default function StatsPage() {
                   <span className="text-xs text-muted-foreground">Pi Price</span>
                 </div>
                 <p className="text-xl font-bold tabular-nums">${stats.piPrice.toFixed(4)}</p>
-                <p className="text-xs text-muted-foreground mt-1">USD</p>
+                <p className="text-xs text-muted-foreground mt-1">Right now</p>
               </Card>
 
               <Card className="p-4 bg-card border-border">
@@ -173,17 +173,17 @@ export default function StatsPage() {
                   <span className="text-xs text-muted-foreground">Volume</span>
                 </div>
                 <p className="text-xl font-bold tabular-nums">${stats.totalVolume}</p>
-                <p className="text-xs text-muted-foreground mt-1">All time</p>
+                <p className="text-xs text-muted-foreground mt-1">Total</p>
               </Card>
             </div>
 
             {/* Reserve Composition */}
             <Card className="p-4 bg-card border-border">
-              <h3 className="font-medium mb-4">Reserve Composition</h3>
+              <h3 className="font-medium mb-4">What backs PUSD</h3>
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-muted-foreground">Pi Collateral</span>
+                    <span className="text-muted-foreground">Pi</span>
                     <span className="tabular-nums font-medium">
                       {collateralBreakdown?.total.piAmount || stats.totalPiReserve} Pi
                     </span>
@@ -214,60 +214,60 @@ export default function StatsPage() {
 
             {/* Activity Stats */}
             <Card className="p-4 bg-card border-border">
-              <h3 className="font-medium mb-4">Protocol Activity</h3>
+              <h3 className="font-medium mb-4">Activity</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-2xl font-bold tabular-nums">{stats.totalMints}</p>
-                  <p className="text-xs text-muted-foreground">Total Mints</p>
+                  <p className="text-xs text-muted-foreground">Mints</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold tabular-nums">{stats.totalRedeems}</p>
-                  <p className="text-xs text-muted-foreground">Total Redeems</p>
+                  <p className="text-xs text-muted-foreground">Redeems</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold tabular-nums">{stats.totalTransactions}</p>
-                  <p className="text-xs text-muted-foreground">Transactions</p>
+                  <p className="text-xs text-muted-foreground">Total</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold tabular-nums">{stats.totalHolders}</p>
-                  <p className="text-xs text-muted-foreground">Holders</p>
+                  <p className="text-xs text-muted-foreground">Users</p>
                 </div>
               </div>
             </Card>
 
-            {/* Protocol Revenue */}
+            {/* Platform Fees */}
             <Card className="p-4 bg-card border-border">
-              <h3 className="font-medium mb-4">Protocol Revenue</h3>
+              <h3 className="font-medium mb-4">Fees earned</h3>
               <div className="flex items-baseline gap-2">
                 <p className="text-2xl font-bold tabular-nums">{stats.totalFeesCollected}</p>
-                <span className="text-sm text-muted-foreground">PUSD collected</span>
+                <span className="text-sm text-muted-foreground">PUSD</span>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                0.3% fee on mint and redeem operations
+                0.3% on every mint and redeem
               </p>
             </Card>
 
-            {/* System Status */}
+            {/* Status */}
             <Card className="p-4 bg-card border-border">
-              <h3 className="font-medium mb-4">System Status</h3>
+              <h3 className="font-medium mb-4">Status</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Network</span>
                   <Badge variant="secondary" className="font-normal">
-                    {isTestnet ? 'Pi Testnet' : 'Pi Mainnet'}
+                    {isTestnet ? 'Preview' : 'Live'}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Health</span>
+                  <span className="text-sm text-muted-foreground">Reserves</span>
                   <Badge 
                     variant={stats.isFullyBacked ? 'default' : 'destructive'}
                     className="font-normal"
                   >
-                    {stats.isFullyBacked ? 'Healthy' : 'At Risk'}
+                    {stats.isFullyBacked ? 'Healthy' : 'Low'}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Surplus</span>
+                  <span className="text-sm text-muted-foreground">Extra reserves</span>
                   <span className="text-sm font-medium text-accent tabular-nums">
                     +${stats.reserveSurplus}
                   </span>

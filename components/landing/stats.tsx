@@ -5,10 +5,10 @@ import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { cn } from '@/lib/utils';
 
 const stats = [
-  { label: 'PUSD Price', value: 1, prefix: '$', decimals: 2, subtext: 'Stable peg' },
-  { label: 'Total Supply', value: 0, suffix: '', decimals: 0, subtext: 'PUSD minted' },
-  { label: 'Backing Ratio', value: 115, suffix: '%', decimals: 0, subtext: 'Overcollateralized' },
-  { label: 'Protocol Fee', value: 0.3, suffix: '%', decimals: 1, subtext: 'Mint & redeem' },
+  { label: 'PUSD Value', value: 1, prefix: '$', decimals: 2, subtext: 'Always' },
+  { label: 'In circulation', value: 0, suffix: '', decimals: 0, subtext: 'PUSD' },
+  { label: 'Backed', value: 115, suffix: '%', decimals: 0, subtext: 'Reserve ratio' },
+  { label: 'Fee', value: 0.3, suffix: '%', decimals: 1, subtext: 'Per transaction' },
 ];
 
 export function LandingStats() {
@@ -36,9 +36,9 @@ export function LandingStats() {
     <section ref={sectionRef} id="stats" className="py-24 md:py-32 bg-secondary/30">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto text-center mb-16">
-          <p className="text-sm font-medium text-accent mb-4 uppercase tracking-wider">Protocol</p>
+          <p className="text-sm font-medium text-accent mb-4 uppercase tracking-wider">Numbers</p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-balance">
-            Transparent by design
+            See everything in real time
           </h2>
         </div>
 
@@ -80,7 +80,7 @@ export function LandingStats() {
         >
           <div className="p-6 rounded-2xl border border-border bg-card">
             <div className="flex items-center justify-between mb-6">
-              <span className="text-sm font-medium">Reserve Composition</span>
+              <span className="text-sm font-medium">What backs PUSD</span>
               <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                 Live
@@ -89,7 +89,7 @@ export function LandingStats() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Pi Collateral</span>
+                  <span className="text-muted-foreground">Pi</span>
                   <span className="font-mono font-medium">60%</span>
                 </div>
                 <div className="h-2.5 rounded-full bg-secondary overflow-hidden">
@@ -104,7 +104,7 @@ export function LandingStats() {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">USD Reserves</span>
+                  <span className="text-muted-foreground">USD</span>
                   <span className="font-mono font-medium">40%</span>
                 </div>
                 <div className="h-2.5 rounded-full bg-secondary overflow-hidden">

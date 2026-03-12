@@ -89,7 +89,7 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
       const errorMessage = err instanceof Error ? err.message : 'Transaction failed';
       setError(errorMessage);
       toast({
-        title: 'Transaction Failed',
+        title: 'Something went wrong',
         description: errorMessage,
         variant: 'destructive',
       });
@@ -114,8 +114,8 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
     return (
       <div className="flex flex-col h-full">
         <SuccessAnimation
-          title="Mint Complete"
-          subtitle={txResult?.txHash ? `Transaction: ${txResult.txHash.slice(0, 8)}...` : 'Your PUSD is ready'}
+          title="Done"
+          subtitle={txResult?.txHash ? `ID: ${txResult.txHash.slice(0, 8)}...` : 'Your PUSD is ready'}
           amount={pusdOutput.toFixed(2)}
           currency="PUSD"
         />
@@ -183,9 +183,9 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
       <BottomSheet open={showConfirmation} onOpenChange={setShowConfirmation}>
         <BottomSheetContent>
           <BottomSheetHeader>
-            <BottomSheetTitle>Confirm Mint</BottomSheetTitle>
+            <BottomSheetTitle>Review</BottomSheetTitle>
             <BottomSheetDescription>
-              Review the details before confirming
+              Make sure everything looks right
             </BottomSheetDescription>
           </BottomSheetHeader>
 
@@ -203,7 +203,7 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
                 <span className="font-mono font-medium">{piAmount.toFixed(4)} Pi</span>
               </div>
               <div className="flex justify-between py-3 border-b border-border">
-                <span className="text-muted-foreground">Collateral (115%)</span>
+                <span className="text-muted-foreground">Reserve held</span>
                 <span className="font-mono text-sm">{piRequired.toFixed(4)} Pi</span>
               </div>
               <div className="flex justify-between py-3 border-b border-border">

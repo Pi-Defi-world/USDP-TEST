@@ -40,7 +40,7 @@ export function ConnectWalletCard() {
           Welcome to PUSD
         </h1>
         <p className="text-muted-foreground mb-8 leading-relaxed">
-          Connect your Pi wallet to start minting and managing your stablecoins.
+          Connect your wallet to start holding stable value on Pi Network.
         </p>
 
         {/* Connect Button */}
@@ -67,12 +67,12 @@ export function ConnectWalletCard() {
           <div className="p-4 rounded-2xl bg-muted/50">
             <Shield className="w-5 h-5 text-accent mb-2" />
             <p className="text-sm font-medium mb-0.5">Secure</p>
-            <p className="text-xs text-muted-foreground">115% backed collateral</p>
+            <p className="text-xs text-muted-foreground">115% reserve backing</p>
           </div>
           <div className="p-4 rounded-2xl bg-muted/50">
             <Zap className="w-5 h-5 text-accent mb-2" />
             <p className="text-sm font-medium mb-0.5">Instant</p>
-            <p className="text-xs text-muted-foreground">Mint in seconds</p>
+            <p className="text-xs text-muted-foreground">Get PUSD in seconds</p>
           </div>
         </div>
 

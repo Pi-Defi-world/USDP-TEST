@@ -12,14 +12,14 @@ interface QuickActionsProps {
 export function QuickActions({ onMint, onRedeem }: QuickActionsProps) {
   const actions = [
     {
-      label: 'Mint',
+      label: 'Get PUSD',
       icon: ArrowDownLeft,
       onClick: onMint,
       iconBg: 'bg-success/10',
       iconColor: 'text-success',
     },
     {
-      label: 'Redeem',
+      label: 'Cash out',
       icon: ArrowUpRight,
       onClick: onRedeem,
       iconBg: 'bg-accent/10',
@@ -34,7 +34,7 @@ export function QuickActions({ onMint, onRedeem }: QuickActionsProps) {
       iconColor: 'text-muted-foreground',
     },
     {
-      label: 'History',
+      label: 'Stats',
       icon: Clock,
       href: '/stats',
       iconBg: 'bg-muted',

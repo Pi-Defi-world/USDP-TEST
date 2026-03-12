@@ -128,7 +128,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-4">
           <div className="w-10 h-10 mx-auto rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <p className="text-sm text-muted-foreground">Loading your portfolio</p>
+          <p className="text-sm text-muted-foreground">Loading your account</p>
         </div>
       </div>
     );
@@ -206,7 +206,7 @@ export default function DashboardPage() {
                 size="sm"
               />
               <MetricCard
-                label="Collateral Ratio"
+                label="Backing"
                 value="115"
                 suffix="%"
                 size="sm"
@@ -225,7 +225,7 @@ export default function DashboardPage() {
             {/* Transaction History */}
             <div className="pt-2">
               <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
-                Recent Activity
+                Activity
               </h3>
               <TransactionHistory walletAddress={walletAddress || undefined} />
             </div>

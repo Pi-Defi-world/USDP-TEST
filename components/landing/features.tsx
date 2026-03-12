@@ -7,23 +7,23 @@ import { cn } from '@/lib/utils';
 const features = [
   {
     icon: Shield,
-    title: 'Fully Backed',
-    description: 'Every PUSD is backed by overcollateralized reserves. Transparent, verifiable, and secure.',
+    title: 'Always backed',
+    description: 'Every PUSD holds its value with 115% reserves. Your money stays safe.',
   },
   {
     icon: Zap,
-    title: 'Instant Settlement',
-    description: 'Mint and redeem PUSD instantly. No waiting periods, no intermediaries.',
+    title: 'Instant',
+    description: 'Get PUSD in seconds. Cash out anytime. No waiting, no approvals.',
   },
   {
     icon: Lock,
-    title: 'Pi Native',
-    description: 'Built specifically for Pi Network. Seamless integration with the Pi ecosystem.',
+    title: 'Built for Pi',
+    description: 'Designed from the ground up for Pi Network. Works right in your Pi Browser.',
   },
   {
     icon: BarChart3,
-    title: 'Real-time Pricing',
-    description: 'Oracle-powered price feeds ensure accurate valuations at all times.',
+    title: 'Fair pricing',
+    description: 'Live Pi prices mean you always get the right rate. No surprises.',
   },
 ];
 
@@ -55,12 +55,12 @@ export function LandingFeatures() {
         <div className="max-w-2xl mx-auto text-center mb-16">
           <p className="text-sm font-medium text-accent mb-4 uppercase tracking-wider">Why PUSD</p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-balance mb-6">
-            Built for stability.
+            Stable money.
             <br />
-            <span className="text-muted-foreground">Designed for everyone.</span>
+            <span className="text-muted-foreground">Simple to use.</span>
           </h2>
           <p className="text-muted-foreground text-lg leading-relaxed">
-            A stablecoin protocol that prioritizes security, transparency, and user experience.
+            Hold dollars on Pi Network. Send, save, or spend without the volatility.
           </p>
         </div>
 

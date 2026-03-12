@@ -69,7 +69,7 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center">
         <FileText className="h-8 w-8 mx-auto text-muted-foreground/50 mb-3" />
-        <p className="text-sm text-muted-foreground">Connect wallet to view history</p>
+        <p className="text-sm text-muted-foreground">Connect to view activity</p>
       </div>
     );
   }
@@ -100,9 +100,9 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center">
         <FileText className="h-8 w-8 mx-auto text-muted-foreground/50 mb-3" />
-        <p className="text-sm text-muted-foreground">No transactions yet</p>
+        <p className="text-sm text-muted-foreground">No activity yet</p>
         <p className="text-xs text-muted-foreground/70 mt-1">
-          Your activity will appear here
+          Your history will show here
         </p>
       </div>
     );

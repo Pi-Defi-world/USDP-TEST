@@ -34,7 +34,7 @@ export function LandingHero() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
             </span>
-            <span className="text-muted-foreground">Live on Pi Network Testnet</span>
+            <span className="text-muted-foreground">Now live on Pi Network</span>
           </div>
 
           {/* Headline */}
@@ -75,7 +75,7 @@ export function LandingHero() {
             </Button>
             <Button size="lg" variant="outline" asChild className="w-full sm:w-auto text-base px-8 h-12 rounded-xl">
               <Link href="/stats">
-                View Protocol
+                See How It Works
               </Link>
             </Button>
           </div>
@@ -88,18 +88,18 @@ export function LandingHero() {
             )}
           >
             <div className="flex flex-col items-center gap-1">
-              <span className="font-mono text-xl font-semibold text-foreground">1:1</span>
-              <span className="text-muted-foreground text-xs">USD Peg</span>
+              <span className="font-mono text-xl font-semibold text-foreground">$1</span>
+              <span className="text-muted-foreground text-xs">Always</span>
             </div>
             <div className="w-px h-8 bg-border" />
             <div className="flex flex-col items-center gap-1">
               <span className="font-mono text-xl font-semibold text-foreground">115%</span>
-              <span className="text-muted-foreground text-xs">Collateralized</span>
+              <span className="text-muted-foreground text-xs">Backed</span>
             </div>
             <div className="w-px h-8 bg-border" />
             <div className="flex flex-col items-center gap-1">
               <span className="font-mono text-xl font-semibold text-foreground">0.3%</span>
-              <span className="text-muted-foreground text-xs">Fee</span>
+              <span className="text-muted-foreground text-xs">Flat fee</span>
             </div>
           </div>
         </div>
