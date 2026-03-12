@@ -168,8 +168,8 @@ export interface TransactionHistoryItem {
   ledger: number;
   createdAt: string;
   type: 'mint' | 'redeem' | 'transfer' | 'trustline' | 'other';
-  usdpAmount: string | null;
-  usdpFee?: string | null; // USDP fee paid (optional)
+  pusdAmount: string | null;
+  pusdFee?: string | null; // PUSD fee paid (optional)
   zyraAmount?: string | null;
   zyraFee?: string | null;
   piAmount: string | null;
@@ -185,7 +185,7 @@ export interface Balance {
     amount: string;
     usdValue: string;
   };
-  usdp: {
+  pusd: {
     amount: string;
     usdValue: string;
     hasTrustline: boolean;
@@ -206,8 +206,8 @@ export interface Balance {
 export interface Stats {
   totalPiReserve: string;
   totalUsdReserve: string;
-  totalUSDPSupply: string;
-  totalUSDPUsdValue: string;
+  totalPUSDSupply: string;
+  totalPUSDUsdValue: string;
   // Legacy support
   totalZyraSupply?: string;
   totalZyraUsdValue?: string;
@@ -238,7 +238,7 @@ export interface Pool {
   reserves: string[];
   totalShares: string;
   fee: number;
-  hasUSDP: boolean;
+  hasPUSD: boolean;
   // Legacy support
   hasZyra?: boolean;
 }
@@ -281,7 +281,7 @@ export interface MintRequest {
 
 export interface RedeemRequest {
   userSecret: string;
-  amount: number; // USDP amount for redeeming
+  amount: number; // PUSD amount for redeeming
 }
 
 export interface TrustlineRequest {
@@ -290,7 +290,7 @@ export interface TrustlineRequest {
 
 export interface PoolCreateRequest {
   userSecret: string;
-  usdpAmount: number;
+  pusdAmount: number;
   piAmount: number;
   // Legacy support
   zyraAmount?: number;
@@ -329,7 +329,7 @@ export interface VolatilityData {
 export interface PositionData {
   id: string;
   piCollateral: number;
-  usdpDebt: number;
+  pusdDebt: number;
   collateralRatio: number;
   currentTier: string;
 }
@@ -338,7 +338,7 @@ export interface SuggestedAction {
   type: 'ADD_COLLATERAL' | 'REPAY_DEBT';
   description: string;
   piAmount?: number;
-  usdpAmount?: number;
+  pusdAmount?: number;
   targetRatio: number;
 }
 

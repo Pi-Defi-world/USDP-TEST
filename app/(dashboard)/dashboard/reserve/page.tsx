@@ -11,7 +11,7 @@ interface ReserveSummary {
   cashUsdReserve: number;
   tBillUsdReserve: number;
   piReserve: number;
-  totalUSDPSupply: number;
+  totalPUSDSupply: number;
   collateralizationRatio: number;
 }
 
@@ -43,7 +43,7 @@ export default function ReserveTransparencyPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Reserves & Health</h1>
         <p className="text-sm text-muted-foreground">
-          Off-chain USD reserves (cash + T-bills) backing the on-chain USDP token, plus Pi exposure.
+          Off-chain USD reserves (cash + T-bills) backing the on-chain PUSD token, plus Pi exposure.
         </p>
       </div>
 
@@ -96,18 +96,18 @@ export default function ReserveTransparencyPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>USDP Supply</CardTitle>
-              <CardDescription>Circulating on-chain USDP</CardDescription>
+              <CardTitle>PUSD Supply</CardTitle>
+              <CardDescription>Circulating on-chain PUSD</CardDescription>
             </CardHeader>
             <CardContent className="text-2xl font-semibold">
-              {data.totalUSDPSupply.toFixed(7)} USDP
+              {data.totalPUSDSupply.toFixed(7)} PUSD
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
               <CardTitle>Collateralization Ratio</CardTitle>
-              <CardDescription>Total USD reserve / USDP supply</CardDescription>
+              <CardDescription>Total USD reserve / PUSD supply</CardDescription>
             </CardHeader>
             <CardContent className="text-2xl font-semibold">
               {(data.collateralizationRatio * 100).toFixed(2)}%
@@ -138,12 +138,12 @@ export default function ReserveTransparencyPage() {
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <p>
-            USDP is a Soroban-standard token on Pi. The peg to ≈1 USD is maintained off-chain by
+            PUSD is a Soroban-standard token on Pi. The peg to ≈1 USD is maintained off-chain by
             an issuer-managed USD reserve (cash + short-term Treasuries), tracked in the backend
             via <code>ReserveSnapshot</code> and <code>BankReserveEvent</code> records.
           </p>
           <p>
-            In Phase 1, users only interact with Pi and USDP on-chain. USD never leaves the issuer&apos;s
+            In Phase 1, users only interact with Pi and PUSD on-chain. USD never leaves the issuer&apos;s
             banking perimeter. Future phases will introduce bank and treasury adapters that feed more
             granular data into this page and into public attestation reports.
           </p>

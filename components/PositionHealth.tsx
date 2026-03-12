@@ -132,7 +132,7 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              You don&apos;t have an active collateral position. Mint USDP tokens to create a position.
+              You don&apos;t have an active collateral position. Mint PUSD to create a position.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -234,10 +234,10 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
             <div>
               <div className="text-xs text-muted-foreground">Debt</div>
               <div className="text-sm font-semibold">
-                {position?.usdpDebt.toFixed(2)} USDP
+                {position?.pusdDebt.toFixed(2)} PUSD
               </div>
               <div className="text-xs text-muted-foreground">
-                ${position?.usdpDebt.toFixed(2)} USD
+                ${position?.pusdDebt.toFixed(2)} USD
               </div>
             </div>
           </div>
@@ -337,9 +337,9 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
                   </div>
                   {softLiquidation.offerDetails && (
                     <div className="text-xs space-y-1 mt-2">
-                      <div>Debt to repay: {softLiquidation.offerDetails.softCloseDebtAmount.toFixed(2)} USDP</div>
-                      <div>Penalty: {softLiquidation.offerDetails.penaltyAmount.toFixed(2)} USDP (3%)</div>
-                      <div>Total: {(softLiquidation.offerDetails.softCloseDebtAmount + softLiquidation.offerDetails.penaltyAmount).toFixed(2)} USDP</div>
+                      <div>Debt to repay: {softLiquidation.offerDetails.softCloseDebtAmount.toFixed(2)} PUSD</div>
+                      <div>Penalty: {softLiquidation.offerDetails.penaltyAmount.toFixed(2)} PUSD (3%)</div>
+                      <div>Total: {(softLiquidation.offerDetails.softCloseDebtAmount + softLiquidation.offerDetails.penaltyAmount).toFixed(2)} PUSD</div>
                     </div>
                   )}
                   {softLiquidation.activeOffers && softLiquidation.activeOffers.length > 0 && (
@@ -355,7 +355,7 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
                               if (response.success) {
                                 toast({
                                   title: 'Soft Liquidation Accepted',
-                                  description: `You will repay ${response.data.debtToRepay.toFixed(2)} USDP with a ${response.data.penaltyAmount.toFixed(2)} USDP penalty.`,
+                                  description: `You will repay ${response.data.debtToRepay.toFixed(2)} PUSD with a ${response.data.penaltyAmount.toFixed(2)} PUSD penalty.`,
                                 });
                                 fetchData();
                               }

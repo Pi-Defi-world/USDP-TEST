@@ -1,5 +1,5 @@
 /**
- * Lightweight client for the USDP Business API (v1).
+ * Lightweight client for the PUSD Business API (v1).
  * Use with an API key from the backend (create-api-key script).
  */
 
@@ -30,7 +30,7 @@ export interface PaymentResponse {
 
 export interface BalanceResponse {
   walletAddress: string;
-  usdpBalance?: string;
+  pusdBalance?: string;
   piBalance?: string;
 }
 

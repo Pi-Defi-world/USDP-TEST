@@ -1,12 +1,12 @@
-# USDP Platform – Pi-Native Stablecoin with Off-Chain USD Reserve
+# PUSD Platform – Pi-Native Stablecoin with Off-Chain USD Reserve
 
-A production-grade USD-referenced stable token built on Pi Network using a Soroban-style `usdp-token` contract, backed by an off-chain USD reserve (cash + short-term Treasuries), with passkey authentication and real-time pricing.
+A production-grade USD-referenced stable token built on Pi Network using a Soroban-style `pusd-token` contract, backed by an off-chain USD reserve (cash + short-term Treasuries), with passkey authentication and real-time pricing.
 
 ## 🚀 Features
 
 ### Core Features
-- **USD-Referenced Stable Token**: 1 USDP is economically targeted to ≈ 1 USD via off-chain reserves.
-- **Off-Chain USD Reserve**: Single USD reserve (cash + T-bills) tracked by the backend’s `BankReserveService`.
+- **USD-Referenced Stable Token**: 1 PUSD is economically targeted to ≈ 1 USD via off-chain reserves.
+- **Off-Chain USD Reserve**: Single USD reserve (cash + T-bills) tracked by the backend's `BankReserveService`.
 - **Pi-Only User Rails (Phase 1)**: Users deposit and redeem Pi; USD never leaves issuer banking perimeter.
 - **Optional Overcollateralization Logic**: Frontend can display and simulate overcollateralization / safety buffers.
 - **Passkey Authentication**: Secure biometric authentication with WebAuthn/FIDO2
@@ -41,7 +41,7 @@ A production-grade USD-referenced stable token built on Pi Network using a Sorob
 - **PostgreSQL**: Database with Prisma ORM
 - **WebAuthn**: Passkey authentication standard
 - **Stellar / Soroban SDKs**: Pi Network smart contract integration (Soroban).
-- **USDP Token Integration**: Backend calls `usdp-token` contract for issuer-only mint/burn.
+- **PUSD Token Integration**: Backend calls `pusd-token` contract for issuer-only mint/burn.
 
 ### Security & Crypto
 - **WebAuthn/FIDO2**: Passwordless authentication
@@ -52,7 +52,7 @@ A production-grade USD-referenced stable token built on Pi Network using a Sorob
 ## 📁 Project Structure
 
 ```
-usdp-platform/
+pusd-platform/
 ├── app/                          # Next.js App Router
 │   ├── (auth)/                   # Authentication pages
 │   │   ├── login/
@@ -78,7 +78,7 @@ usdp-platform/
 │   ├── passkey/                # Passkey authentication
 │   │   └── webauthn.ts         # WebAuthn implementation
 │   ├── stablecoin/             # Stablecoin logic
-│   │   └── USDPBusinessStablecoin.ts
+│   │   └── PUSDBusinessStablecoin.ts
 │   └── store/                   # State management
 │       ├── authStore.ts
 │       ├── walletStore.ts
@@ -114,8 +114,8 @@ usdp-platform/
    Create `.env.local` file:
    ```env
    # Database Configuration
-   DATABASE_URL=postgresql://user:password@localhost:5432/usdp
-   DIRECT_DATABASE_URL=postgresql://user:password@localhost:5432/usdp
+   DATABASE_URL=postgresql://user:password@localhost:5432/pusd
+   DIRECT_DATABASE_URL=postgresql://user:password@localhost:5432/pusd
 
    # Pi / Soroban Network Configuration
    PI_NETWORK_SERVER_URL=https://api.testnet.minepi.com
@@ -126,15 +126,15 @@ usdp-platform/
 
    # WebAuthn/Passkey Configuration
    WEBAUTHN_RP_ID=localhost
-   WEBAUTHN_RP_NAME="USDP Platform"
+   WEBAUTHN_RP_NAME="PUSD Platform"
    WEBAUTHN_ORIGIN=http://localhost:3000
 
    # Security Configuration
    JWT_SECRET=your-super-secret-jwt-key-change-in-production
    ENCRYPTION_KEY=your-encryption-key-change-in-production
 
-   # USDP Stablecoin / Token Configuration
-   USDP_ASSET_CODE=USDP
+   # PUSD Stablecoin / Token Configuration
+   PUSD_ASSET_CODE=PUSD
    ISSUER_PUBLIC_KEY=your-issuer-public-key
    ISSUER_SECRET_KEY=your-issuer-secret-key
    RESERVE_PUBLIC_KEY=your-reserve-public-key
@@ -182,24 +182,24 @@ usdp-platform/
 
 ## 💰 Stablecoin Operations
 
-### Minting USDP (Pi → USDP)
+### Minting PUSD (Pi → PUSD)
 1. User enters **Pi amount** to deposit.
 2. System fetches current Pi price from the oracle.
-3. Calculates **USDP output** and fees based on USD value of Pi.
+3. Calculates **PUSD output** and fees based on USD value of Pi.
 4. Backend creates a `Deposit` record and instructions for sending Pi (muxed address + memo).
 5. User sends Pi to the reserve address; backend detects the payment and marks the deposit `CONFIRMED`.
-6. Backend calls the `usdp-token` issuer path to **mint USDP** to the user and marks the deposit `PROCESSED`.
+6. Backend calls the `pusd-token` issuer path to **mint PUSD** to the user and marks the deposit `PROCESSED`.
 
-### Redeeming USDP (USDP → Pi)
-1. User enters **USDP amount** to redeem.
+### Redeeming PUSD (PUSD → Pi)
+1. User enters **PUSD amount** to redeem.
 2. System calculates expected Pi output (based on current Pi price and fees).
-3. Backend tracks a `Redeem` record and observes USDP being burned/transferred back to the issuer.
+3. Backend tracks a `Redeem` record and observes PUSD being burned/transferred back to the issuer.
 4. When confirmed, backend sends Pi back to the user and marks the redeem `PROCESSED`.
 
 ### Reserve & Transparency
 - **Reserve Composition**: Single USD reserve (cash + T-bills), no on-chain USDC/asset basket.
 - **Reserve Snapshots**: Backend computes `ReserveSnapshot` rows and exposes them via APIs.
-- **Transparency UI**: Dashboard section shows total USD reserve, Pi reserve, USDP supply, and collateralization ratio.
+- **Transparency UI**: Dashboard section shows total USD reserve, Pi reserve, PUSD supply, and collateralization ratio.
 
 ## 🚀 Deployment
 
@@ -237,8 +237,8 @@ usdp-platform/
 - `PUT /api/auth/verify-login` - Verify passkey authentication
 
 ### Stablecoin Operations
-- `POST /api/stablecoin/mint` - Mint USDP tokens
-- `POST /api/stablecoin/redeem` - Redeem USDP tokens
+- `POST /api/stablecoin/mint` - Mint PUSD tokens
+- `POST /api/stablecoin/redeem` - Redeem PUSD tokens
 - `GET /api/stablecoin/balance?address={address}` - Get user balances
 - `GET /api/stablecoin/stats` - Get system statistics
 - `GET /api/stablecoin/collateral-composition` - Get multi-collateral breakdown (70/30)
@@ -347,14 +347,14 @@ For detailed testnet information, visit `/help/testnet` in the dashboard.
 
 ## ⚠️ Disclaimer
 
-This is a test platform built on Pi Network Testnet and Stellar Testnet. Do not use for production purposes. The USDP stablecoin is for testing and tokenization setup before MVP launch.
+This is a test platform built on Pi Network Testnet and Stellar Testnet. Do not use for production purposes. The PUSD stablecoin is for testing and tokenization setup before MVP launch.
 
 ## 🔧 Tokenization Setup
 
-### Initializing USDP Asset
+### Initializing PUSD Asset
 ```bash
-cd USDP-TEST-BACKEND
-node scripts/initialize-usdp-asset.js
+cd pusd-backend
+node scripts/initialize-pusd-asset.js
 ```
 
 ### Testing Minting

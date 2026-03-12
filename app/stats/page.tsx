@@ -18,8 +18,8 @@ export default function StatsPage() {
   const [stats, setStats] = useState({
     totalPiReserve: '0.0000000',
     totalUsdReserve: '0.00',
-    totalUSDPSupply: '0.0000000',
-    totalUSDPUsdValue: '0.00',
+    totalPUSDSupply: '0.0000000',
+    totalPUSDUsdValue: '0.00',
     backingRatio: '0.00%',
     reserveSurplus: '0.00',
     totalFeesCollected: '0.0000000',
@@ -43,8 +43,8 @@ export default function StatsPage() {
         const statsResponse = await apiClient.getStatsLegacy();
         if (statsResponse.success && statsResponse.data) {
           const d = statsResponse.data as {
-            totalPiReserve?: string; totalUsdReserve?: string; totalUSDPSupply?: string;
-            totalUSDPUsdValue?: string; backingRatio?: string; reserveSurplus?: string;
+            totalPiReserve?: string; totalUsdReserve?: string; totalPUSDSupply?: string;
+            totalPUSDUsdValue?: string; backingRatio?: string; reserveSurplus?: string;
             totalFeesCollected?: string; totalVolume?: string;
             totalMints?: number; totalRedeems?: number; totalTransactions?: number; totalHolders?: number;
             piPrice?: number; isFullyBacked?: boolean;
@@ -52,8 +52,8 @@ export default function StatsPage() {
           setStats({
             totalPiReserve: d.totalPiReserve || '0.0000000',
             totalUsdReserve: d.totalUsdReserve || '0.00',
-            totalUSDPSupply: d.totalUSDPSupply || '0.0000000',
-            totalUSDPUsdValue: d.totalUSDPUsdValue || '0.00',
+            totalPUSDSupply: d.totalPUSDSupply || '0.0000000',
+            totalPUSDUsdValue: d.totalPUSDUsdValue || '0.00',
             backingRatio: d.backingRatio || '0.00%',
             reserveSurplus: d.reserveSurplus || '0.00',
             totalFeesCollected: d.totalFeesCollected || '0.0000000',
@@ -154,8 +154,8 @@ export default function StatsPage() {
                   <DollarSign className="w-4 h-4 text-accent" />
                   <span className="text-xs text-muted-foreground">PUSD out there</span>
                 </div>
-                <p className="text-xl font-bold tabular-nums">{parseFloat(stats.totalUSDPSupply).toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-1">${stats.totalUSDPUsdValue}</p>
+                <p className="text-xl font-bold tabular-nums">{parseFloat(stats.totalPUSDSupply).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-1">${stats.totalPUSDUsdValue}</p>
               </Card>
 
               <Card className="p-4 bg-card border-border">

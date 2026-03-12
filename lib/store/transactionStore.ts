@@ -22,8 +22,8 @@ interface TransactionState {
   clearError: () => void;
   setLoading: (loading: boolean) => void;
   clearTransactions: () => void;
-  mintUSDP: (amount: number, walletAddress: string, secretSeed: string) => Promise<{ success: boolean; data?: unknown; error?: string }>;
-  redeemUSDP: (amount: number, walletAddress: string, secretSeed: string) => Promise<{ success: boolean; data?: unknown; error?: string }>;
+  mintPUSD: (amount: number, walletAddress: string, secretSeed: string) => Promise<{ success: boolean; data?: unknown; error?: string }>;
+  redeemPUSD: (amount: number, walletAddress: string, secretSeed: string) => Promise<{ success: boolean; data?: unknown; error?: string }>;
   fetchTransactionHistory: () => Promise<void>;
 }
 
@@ -77,7 +77,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
   
   clearTransactions: () => set({ transactions: [], pendingTransactions: [], error: null }),
   
-  mintUSDP: async (amount, walletAddress, secretSeed) => {
+  mintPUSD: async (amount, walletAddress, secretSeed) => {
     set({ isLoading: true, error: null });
     try {
       const response = await apiClient.mint({ amount, walletAddress, secretSeed });
@@ -92,7 +92,7 @@ export const useTransactionStore = create<TransactionState>((set) => ({
     }
   },
   
-  redeemUSDP: async (amount, walletAddress, secretSeed) => {
+  redeemPUSD: async (amount, walletAddress, secretSeed) => {
     set({ isLoading: true, error: null });
     try {
       const response = await apiClient.redeem({ amount, walletAddress, secretSeed });

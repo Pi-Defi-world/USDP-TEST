@@ -128,7 +128,7 @@ export default function SavePage() {
           Save
         </h1>
         <p className="text-sm text-muted-foreground">
-          Earn yield on your USDP. Deposit to start saving; withdraw anytime.
+          Earn yield on your PUSD. Deposit to start saving; withdraw anytime.
         </p>
       </div>
 
@@ -153,9 +153,9 @@ export default function SavePage() {
               <CardDescription>Balance and accrued interest</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <p className="text-3xl font-semibold">{Number(balance).toFixed(7)} USDP</p>
+              <p className="text-3xl font-semibold">{Number(balance).toFixed(7)} PUSD</p>
               <p className="text-sm text-muted-foreground">
-                Accrued interest: {Number(accruedInterest).toFixed(7)} USDP
+                Accrued interest: {Number(accruedInterest).toFixed(7)} PUSD
               </p>
               <p className="text-sm text-muted-foreground">
                 Current APY: {(apy * 100).toFixed(2)}%
@@ -170,11 +170,11 @@ export default function SavePage() {
                   <ArrowDownToLine className="h-4 w-4" />
                   Deposit
                 </CardTitle>
-                <CardDescription>Add USDP to your savings</CardDescription>
+                <CardDescription>Add PUSD to your savings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="deposit-amount">Amount (USDP)</Label>
+                  <Label htmlFor="deposit-amount">Amount (PUSD)</Label>
                   <Input
                     id="deposit-amount"
                     type="number"
@@ -197,11 +197,11 @@ export default function SavePage() {
                   <ArrowUpFromLine className="h-4 w-4" />
                   Withdraw
                 </CardTitle>
-                <CardDescription>Withdraw USDP from savings</CardDescription>
+                <CardDescription>Withdraw PUSD from savings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="withdraw-amount">Amount (USDP)</Label>
+                  <Label htmlFor="withdraw-amount">Amount (PUSD)</Label>
                   <Input
                     id="withdraw-amount"
                     type="number"
@@ -232,7 +232,7 @@ export default function SavePage() {
                   {history.map((t) => (
                     <li key={t.id} className="flex justify-between text-sm">
                       <span className={t.type === 'DEPOSIT' ? 'text-green-600' : 'text-orange-600'}>
-                        {t.type} {t.amount} USDP
+                        {t.type} {t.amount} PUSD
                       </span>
                       <span className="text-muted-foreground">
                         {t.balanceAfter != null ? `Balance: ${t.balanceAfter}` : ''} · {new Date(t.createdAt).toLocaleString()}

@@ -161,8 +161,8 @@ export default function DashboardPage() {
       >
         {/* Balance Section */}
         <BalanceCard 
-          pusdBalance={balance?.usdp?.amount || '0'}
-          pusdValue={balance?.usdp?.usdValue || '0'}
+          pusdBalance={balance?.pusd?.amount || '0'}
+          pusdValue={balance?.pusd?.usdValue || '0'}
           piBalance={balance?.pi?.amount || '0'}
           piValue={balance?.pi?.usdValue || '0'}
           piPrice={piPrice}

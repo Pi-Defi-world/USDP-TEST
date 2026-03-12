@@ -113,8 +113,8 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
       <div className="max-h-[400px] overflow-y-auto divide-y divide-border">
         {transactions.map((tx) => {
           const type = tx.type as 'mint' | 'redeem' | 'send' | 'receive';
-          const amount = tx.usdpAmount || tx.zyraAmount || tx.piAmount || '0';
-          const currency = tx.usdpAmount || tx.zyraAmount ? 'PUSD' : 'Pi';
+          const amount = tx.pusdAmount || tx.zyraAmount || tx.piAmount || '0';
+          const currency = tx.pusdAmount || tx.zyraAmount ? 'PUSD' : 'Pi';
           const status = tx.success ? 'completed' : 'failed';
 
           return (
