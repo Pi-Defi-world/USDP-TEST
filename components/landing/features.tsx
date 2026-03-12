@@ -146,36 +146,39 @@ export function LandingFeatures() {
 
           {/* Bottom row: 2 image cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[features[2], features[3]].map((feature, i) => (
-              <div
-                key={feature.title}
-                className={cn(
-                  "group relative rounded-2xl border border-border bg-card overflow-hidden transition-all duration-500",
-                  "hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5",
-                  isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-                )}
-                style={{ transitionDelay: `${(i + 2) * 100}ms` }}
-              >
-                <div className="relative h-36 overflow-hidden">
-                  <Image
-                    src={feature.image!}
-                    alt={feature.imageAlt}
-                    fill
-                    className="object-cover opacity-60 group-hover:opacity-75 transition-opacity duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card" />
-                </div>
-                <div className="p-6 flex items-start gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-                    <feature.icon className="w-5 h-5 text-accent" />
+            {[features[2], features[3]].map((feature, i) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={feature.title}
+                  className={cn(
+                    "group relative rounded-2xl border border-border bg-card overflow-hidden transition-all duration-500",
+                    "hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5",
+                    isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                  )}
+                  style={{ transitionDelay: `${(i + 2) * 100}ms` }}
+                >
+                  <div className="relative h-36 overflow-hidden">
+                    <Image
+                      src={feature.image!}
+                      alt={feature.imageAlt}
+                      fill
+                      className="object-cover opacity-60 group-hover:opacity-75 transition-opacity duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-card" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-base text-foreground mb-1">{feature.title}</h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
+                  <div className="p-6 flex items-start gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-accent" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-base text-foreground mb-1">{feature.title}</h3>
+                      <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

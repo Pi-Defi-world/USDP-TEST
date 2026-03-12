@@ -25,9 +25,10 @@ export default function SavePage() {
     try {
       const res = await apiClient.getSavingsBalance();
       if (res?.success && res?.data) {
-        setBalance(res.data.balance ?? '0');
-        setAccruedInterest(res.data.accruedInterest ?? '0');
-        setApy(parseFloat(res.data.apyRate ?? '0'));
+        const data = res.data as { balance?: string; accruedInterest?: string; apyRate?: string };
+        setBalance(data.balance ?? '0');
+        setAccruedInterest(data.accruedInterest ?? '0');
+        setApy(parseFloat(data.apyRate ?? '0'));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load balance');
