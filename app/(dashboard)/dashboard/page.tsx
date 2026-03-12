@@ -15,9 +15,8 @@ import { TransactionHistory } from '@/components/TransactionHistory';
 import { PositionHealth } from '@/components/PositionHealth';
 import { TestnetBadge } from '@/components/TestnetBadge';
 import { ReservePoolBreakdown } from '@/components/ReservePoolBreakdown';
-import { PoolInfoCard } from '@/components/PoolInfoCard';
 import { apiClient } from '@/lib/api/client';
-import { PoolInfo, ReserveStatus, CollateralBreakdown } from '@/types';
+import { ReserveStatus, CollateralBreakdown } from '@/types';
 import { Wallet, TrendingUp, DollarSign, Shield, LogOut, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -28,7 +27,6 @@ export default function DashboardPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isTestnet, setIsTestnet] = useState(false);
-  const [poolInfo, setPoolInfo] = useState<PoolInfo | null>(null);
   const [reserveStatus, setReserveStatus] = useState<ReserveStatus | null>(null);
   const [collateralBreakdown, setCollateralBreakdown] = useState<CollateralBreakdown | null>(null);
 
@@ -58,16 +56,6 @@ export default function DashboardPage() {
 
         // Fetch testnet-specific data if in testnet mode
         if (testnetMode) {
-          try {
-            // Fetch pool info
-            const poolResponse = await apiClient.getPoolInfo();
-            if (poolResponse.success && poolResponse.data) {
-              setPoolInfo(poolResponse.data as PoolInfo);
-            }
-          } catch (error) {
-            console.error('Failed to fetch pool info:', error);
-          }
-
           try {
             // Fetch reserve status
             const reserveResponse = await apiClient.getReserveStatus();
@@ -131,15 +119,6 @@ export default function DashboardPage() {
       // Refresh testnet-specific data if in testnet mode
       if (isTestnet) {
         try {
-          const poolResponse = await apiClient.getPoolInfo();
-          if (poolResponse.success && poolResponse.data) {
-            setPoolInfo(poolResponse.data as PoolInfo);
-          }
-        } catch (error) {
-          console.error('Failed to refresh pool info:', error);
-        }
-
-        try {
           const reserveResponse = await apiClient.getReserveStatus();
           if (reserveResponse.success && reserveResponse.data) {
             const status = reserveResponse.data as ReserveStatus;
@@ -180,8 +159,6 @@ export default function DashboardPage() {
     }
   };
 
-  const assetLabel = isTestnet ? 'USD-TEST' : 'USDC';
-
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
@@ -194,7 +171,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground text-center">
-              Use the "Connect Wallet" button in the navigation bar to get started.
+              Use the &quot;Connect Wallet&quot; button in the navigation bar to get started.
             </p>
           </CardContent>
         </Card>
@@ -278,11 +255,10 @@ export default function DashboardPage() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="mint">Mint</TabsTrigger>
             <TabsTrigger value="redeem">Redeem</TabsTrigger>
-            <TabsTrigger value="pools">Pools</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -302,11 +278,6 @@ export default function DashboardPage() {
             {/* Testnet-specific: Reserve/Pool Breakdown */}
             {isTestnet && collateralBreakdown && (
               <ReservePoolBreakdown breakdown={collateralBreakdown} isTestnet={isTestnet} />
-            )}
-
-            {/* Testnet-specific: Pool Info */}
-            {isTestnet && poolInfo && (
-              <PoolInfoCard poolInfo={poolInfo} isTestnet={isTestnet} />
             )}
 
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
@@ -370,28 +341,6 @@ export default function DashboardPage() {
                   <div className="text-center py-8">
                     <p className="text-muted-foreground">
                       Please connect your wallet to redeem ZYRA tokens
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="pools" className="space-y-6">
-            {isTestnet && poolInfo ? (
-              <PoolInfoCard poolInfo={poolInfo} isTestnet={isTestnet} />
-            ) : (
-              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
-                <CardHeader>
-                  <CardTitle>Liquidity Pools</CardTitle>
-                  <CardDescription>
-                    Trade and provide liquidity
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">
-                      {isTestnet ? 'Pool information will appear here once initialized' : 'Pool functionality coming soon...'}
                     </p>
                   </div>
                 </CardContent>

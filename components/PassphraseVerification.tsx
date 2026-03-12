@@ -95,7 +95,7 @@ export function PassphraseVerification({
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
           {walletAddress
-            ? 'Please verify your passphrase to add a new passkey for this device.'
+            ? 'Please verify your passphrase to continue.'
             : 'Please enter your 24-word passphrase to verify your identity.'}
         </AlertDescription>
       </Alert>

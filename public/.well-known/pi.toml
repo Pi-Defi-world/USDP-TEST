@@ -2,6 +2,6 @@
 code="USDP"
 issuer="GBCX7CGY3DI5XM5XDWD3TVNM4REG73ZYSLDFZSTW7MTRUFKS662HWSYS"
 name="USDP Stablecoin"
-desc="USDP is a decentralized stablecoin backed by Pi and USD-TEST (on testnet) or USDC (on mainnet), maintaining a 1:1 peg with USD. It provides a stable store of value and medium of exchange on the Pi Network."
+desc="USDP is a programmable stable token on Pi Network, implemented as a Soroban token and economically targeted to track 1 USD via an off-chain USD reserve (cash + short-term Treasuries) managed by the issuer."
 image="https://usdp-coin.com/usdp-logo.png"
 

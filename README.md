@@ -1,24 +1,24 @@
-# USDP Platform - Multi-Collateral Stablecoin
+# USDP Platform – Pi-Native Stablecoin with Off-Chain USD Reserve
 
-A production-grade USD-pegged stablecoin built on Pi Network with multi-collateral backing (70% USDC, 30% Pi), passkey authentication, and real-time pricing.
+A production-grade USD-referenced stable token built on Pi Network using a Soroban-style `usdp-token` contract, backed by an off-chain USD reserve (cash + short-term Treasuries), with passkey authentication and real-time pricing.
 
 ## 🚀 Features
 
 ### Core Features
-- **USD-Pegged Stablecoin**: 1 USDP = 1 USD
-- **Multi-Collateral Backing**: 70% USDC (Stellar Network) + 30% Pi (Pi Network)
-- **Overcollateralization**: 115% minimum collateralization buffer for stability
+- **USD-Referenced Stable Token**: 1 USDP is economically targeted to ≈ 1 USD via off-chain reserves.
+- **Off-Chain USD Reserve**: Single USD reserve (cash + T-bills) tracked by the backend’s `BankReserveService`.
+- **Pi-Only User Rails (Phase 1)**: Users deposit and redeem Pi; USD never leaves issuer banking perimeter.
+- **Optional Overcollateralization Logic**: Frontend can display and simulate overcollateralization / safety buffers.
 - **Passkey Authentication**: Secure biometric authentication with WebAuthn/FIDO2
 - **Client-Side Encryption**: Passphrases encrypted locally, never sent to server
 - **Real-Time Pricing**: Dynamic Pi price integration from oracle APIs
 - **Atomic Transactions**: Multi-signature transactions on Pi Network
 
-### Business Model
-- **Fee Structure**: 0.3% mint/redeem fees, 0.1% API fees, 0.2% arbitrage fees
-- **Treasury Management**: Automated fee collection and surplus management
-- **Multi-Collateral Rebalancing**: Automated 70/30 ratio maintenance
-- **Analytics**: Comprehensive business metrics and reporting
-- **Safety Features**: Circuit breakers, price tolerance, liquidation thresholds
+### Business / Risk Model (Current Version)
+- **Fee Structure**: 0.3% mint/redeem fees (configurable), optional API/arbitrage fees.
+- **Treasury Management**: Off-chain USD reserve (cash + T-bills) handled by issuer; no on-chain baskets.
+- **Single-Reserve Accounting**: Backend maintains a consolidated USD reserve and reserve snapshots.
+- **Safety Features**: Circuit breakers, price tolerance, liquidation thresholds (enforced in backend/stablecoin services).
 
 ### Security
 - **Passphrase Security**: Never leaves browser, encrypted with passkey-derived keys
@@ -40,8 +40,8 @@ A production-grade USD-pegged stablecoin built on Pi Network with multi-collater
 - **Express.js**: RESTful API server
 - **PostgreSQL**: Database with Prisma ORM
 - **WebAuthn**: Passkey authentication standard
-- **Stellar SDK**: Pi Network and Stellar blockchain integration
-- **USDC Integration**: Stellar USDC for multi-collateral support
+- **Stellar / Soroban SDKs**: Pi Network smart contract integration (Soroban).
+- **USDP Token Integration**: Backend calls `usdp-token` contract for issuer-only mint/burn.
 
 ### Security & Crypto
 - **WebAuthn/FIDO2**: Passwordless authentication
@@ -96,7 +96,6 @@ usdp-platform/
 - Node.js 18+ 
 - pnpm (recommended) or npm
 - PostgreSQL (local or cloud)
-- Stellar account for USDC operations (testnet or mainnet)
 
 ### Installation
 
@@ -118,16 +117,9 @@ usdp-platform/
    DATABASE_URL=postgresql://user:password@localhost:5432/usdp
    DIRECT_DATABASE_URL=postgresql://user:password@localhost:5432/usdp
 
-   # Pi Network Configuration
+   # Pi / Soroban Network Configuration
    PI_NETWORK_SERVER_URL=https://api.testnet.minepi.com
    PI_NETWORK_PASSPHRASE="Pi Testnet"
-
-   # Stellar Network Configuration (for USDC)
-   STELLAR_NETWORK_URL=https://horizon-testnet.stellar.org
-   STELLAR_NETWORK_PASSPHRASE="Test SDF Network ; September 2015"
-   USDC_ISSUER_PUBLIC_KEY=GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN
-   STELLAR_RESERVE_PUBLIC_KEY=your_stellar_reserve_public_key
-   STELLAR_RESERVE_SECRET_KEY=your_stellar_reserve_secret_key
 
    # Oracle Configuration
    ORACLE_API_URL=https://oracle-three-xi.vercel.app
@@ -141,7 +133,7 @@ usdp-platform/
    JWT_SECRET=your-super-secret-jwt-key-change-in-production
    ENCRYPTION_KEY=your-encryption-key-change-in-production
 
-   # USDP Stablecoin Configuration
+   # USDP Stablecoin / Token Configuration
    USDP_ASSET_CODE=USDP
    ISSUER_PUBLIC_KEY=your-issuer-public-key
    ISSUER_SECRET_KEY=your-issuer-secret-key
@@ -149,11 +141,6 @@ usdp-platform/
    RESERVE_SECRET_KEY=your-reserve-secret-key
    TREASURY_PUBLIC_KEY=your-treasury-public-key
    TREASURY_SECRET_KEY=your-treasury-secret-key
-
-   # Multi-Collateral Configuration
-   USDP_USDC_TARGET_RATIO=0.70
-   USDP_PI_TARGET_RATIO=0.30
-   USDP_MIN_OVERCOLLATERALIZATION=1.15
 
    # Testnet Configuration (Frontend)
    NEXT_PUBLIC_NETWORK=testnet
@@ -195,31 +182,24 @@ usdp-platform/
 
 ## 💰 Stablecoin Operations
 
-### Minting USDP
-1. User enters Pi amount to mint (or USDC amount in future)
-2. System fetches current Pi price
-3. Calculates USDP output with fees and overcollateralization
-4. Displays fees and confirmation
-5. User confirms transaction
-6. Atomic transaction: Pi → Reserve, USDP → User
-7. Fees sent to treasury
-8. Protocol maintains 70% USDC / 30% Pi collateral ratio
+### Minting USDP (Pi → USDP)
+1. User enters **Pi amount** to deposit.
+2. System fetches current Pi price from the oracle.
+3. Calculates **USDP output** and fees based on USD value of Pi.
+4. Backend creates a `Deposit` record and instructions for sending Pi (muxed address + memo).
+5. User sends Pi to the reserve address; backend detects the payment and marks the deposit `CONFIRMED`.
+6. Backend calls the `usdp-token` issuer path to **mint USDP** to the user and marks the deposit `PROCESSED`.
 
-### Redeeming USDP
-1. User enters USDP amount to redeem
-2. System calculates Pi to return (or USDC in future)
-3. Displays fees and confirmation
-4. User confirms transaction
-5. Atomic transaction: USDP → Issuer (burned), Pi → User
-6. Fees sent to treasury
+### Redeeming USDP (USDP → Pi)
+1. User enters **USDP amount** to redeem.
+2. System calculates expected Pi output (based on current Pi price and fees).
+3. Backend tracks a `Redeem` record and observes USDP being burned/transferred back to the issuer.
+4. When confirmed, backend sends Pi back to the user and marks the redeem `PROCESSED`.
 
-### Multi-Collateral Features
-- **Collateral Composition**: 70% USDC (Stellar) + 30% Pi (Pi Network)
-- **Automated Rebalancing**: Daily process to maintain target ratios
-- **Overcollateralization**: 115% minimum collateralization buffer
-- **Fee Collection**: Automated fee collection to treasury
-- **Price Protection**: Circuit breakers and price tolerance
-- **Analytics**: Comprehensive business metrics with multi-collateral breakdown
+### Reserve & Transparency
+- **Reserve Composition**: Single USD reserve (cash + T-bills), no on-chain USDC/asset basket.
+- **Reserve Snapshots**: Backend computes `ReserveSnapshot` rows and exposes them via APIs.
+- **Transparency UI**: Dashboard section shows total USD reserve, Pi reserve, USDP supply, and collateralization ratio.
 
 ## 🚀 Deployment
 
@@ -246,9 +226,7 @@ usdp-platform/
 - Update `WEBAUTHN_RP_ID` to your domain
 - Update `WEBAUTHN_ORIGIN` to your production URL
 - Use strong, unique secrets for `JWT_SECRET` and `ENCRYPTION_KEY`
-- Configure Pi Network production keys
-- Configure Stellar Network production keys for USDC
-- Set up Stellar reserve wallet for USDC collateral
+- Configure Pi Network / Soroban production keys
 
 ## 📊 API Endpoints
 

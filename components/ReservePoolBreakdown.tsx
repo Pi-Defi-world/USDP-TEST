@@ -6,18 +6,16 @@ import { DollarSign, Wallet } from 'lucide-react';
 
 interface ReservePoolBreakdownProps {
   breakdown: CollateralBreakdown;
-  isTestnet?: boolean;
 }
 
-export function ReservePoolBreakdown({ breakdown, isTestnet }: ReservePoolBreakdownProps) {
-  const assetLabel = isTestnet ? 'USD-TEST' : 'USDC';
+export function ReservePoolBreakdown({ breakdown }: ReservePoolBreakdownProps) {
 
   return (
     <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
       <CardHeader>
-        <CardTitle>Collateral Breakdown</CardTitle>
+        <CardTitle>Reserve Breakdown (Legacy View)</CardTitle>
         <CardDescription>
-          Reserve and pool balances for collateral backing
+          Historical reserve vs pool composition used in early prototypes. The current system uses a single off-chain USD reserve.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -38,11 +36,11 @@ export function ReservePoolBreakdown({ breakdown, isTestnet }: ReservePoolBreakd
                 <span className="text-sm font-medium">${breakdown.reserve.piValue}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">{assetLabel} Amount:</span>
-                <span className="text-sm font-medium">{breakdown.reserve.usdTestAmount} {assetLabel}</span>
+                <span className="text-sm text-muted-foreground">Legacy USD Amount:</span>
+                <span className="text-sm font-medium">{breakdown.reserve.usdTestAmount}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">{assetLabel} Value:</span>
+                <span className="text-sm text-muted-foreground">Legacy USD Value:</span>
                 <span className="text-sm font-medium">${breakdown.reserve.usdTestValue}</span>
               </div>
             </div>
@@ -64,11 +62,11 @@ export function ReservePoolBreakdown({ breakdown, isTestnet }: ReservePoolBreakd
                 <span className="text-sm font-medium">${breakdown.pool.piValue}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">{assetLabel} Amount:</span>
-                <span className="text-sm font-medium">{breakdown.pool.usdTestAmount} {assetLabel}</span>
+                <span className="text-sm text-muted-foreground">Legacy USD Amount:</span>
+                <span className="text-sm font-medium">{breakdown.pool.usdTestAmount}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">{assetLabel} Value:</span>
+                <span className="text-sm text-muted-foreground">Legacy USD Value:</span>
                 <span className="text-sm font-medium">${breakdown.pool.usdTestValue}</span>
               </div>
             </div>
@@ -85,8 +83,8 @@ export function ReservePoolBreakdown({ breakdown, isTestnet }: ReservePoolBreakd
                 <span className="text-sm font-medium">{breakdown.total.piAmount} Pi</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Total {assetLabel}:</span>
-                <span className="text-sm font-medium">{breakdown.total.usdTestAmount} {assetLabel}</span>
+                <span className="text-sm text-muted-foreground">Total legacy USD:</span>
+                <span className="text-sm font-medium">{breakdown.total.usdTestAmount}</span>
               </div>
             </div>
             <div>
@@ -97,7 +95,7 @@ export function ReservePoolBreakdown({ breakdown, isTestnet }: ReservePoolBreakd
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Ratio:</span>
                 <span className="text-sm font-medium">
-                  {(breakdown.total.usdcRatio * 100).toFixed(0)}% {assetLabel} / {(breakdown.total.piRatio * 100).toFixed(0)}% Pi
+                  {(breakdown.total.usdcRatio * 100).toFixed(0)}% legacy USD / {(breakdown.total.piRatio * 100).toFixed(0)}% Pi
                 </span>
               </div>
             </div>

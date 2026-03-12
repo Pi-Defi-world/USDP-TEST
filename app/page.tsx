@@ -19,7 +19,7 @@ export default function HomePage() {
             </h2>
             <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
               A production-grade USD-pegged stablecoin built on Pi Network with 
-              passkey authentication and real-time pricing
+              Pi authentication and real-time pricing
             </p>
           </div>
 

@@ -16,6 +16,11 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
   const [transactions, setTransactions] = useState<TransactionHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isTestnet = apiClient.isTestnetMode();
+  // Use testnet explorer when NEXT_PUBLIC_NETWORK=testnet (or hostname includes "testnet"); otherwise mainnet explorer
+  const explorerTxUrl = isTestnet
+    ? (hash: string) => `https://blockexplorer.minepi.com/testnet/tx/${hash}`
+    : (hash: string) => `https://blockexplorer.minepi.com/tx/${hash}`;
 
   const fetchHistory = async () => {
     if (!walletAddress) return;
@@ -162,10 +167,10 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
                     <div className="space-y-1">
                       {tx.type === 'mint' && (
                         <>
-                          {(tx.usdpAmount || (tx as any).zyraAmount) && (
+                          {(tx.usdpAmount || tx.zyraAmount) && (
                             <div className="flex items-center space-x-2">
                               <span className="text-sm font-medium text-green-600">
-                                +{tx.usdpAmount || (tx as any).zyraAmount} USDP
+                                +{tx.usdpAmount || tx.zyraAmount} USDP
                               </span>
                             </div>
                           )}
@@ -180,10 +185,10 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
                       )}
                       {tx.type === 'redeem' && (
                         <>
-                          {(tx.usdpAmount || (tx as any).zyraAmount) && (
+                          {(tx.usdpAmount || tx.zyraAmount) && (
                             <div className="flex items-center space-x-2">
                               <span className="text-sm font-medium text-red-600">
-                                -{tx.usdpAmount || (tx as any).zyraAmount} USDP
+                                -{tx.usdpAmount || tx.zyraAmount} USDP
                               </span>
                             </div>
                           )}
@@ -198,11 +203,11 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
                       )}
                       {tx.type !== 'mint' && tx.type !== 'redeem' && (
                         <>
-                          {(tx.usdpAmount || (tx as any).zyraAmount) && (
+                          {(tx.usdpAmount || tx.zyraAmount) && (
                             <div className="flex items-center space-x-2">
                               <span className="text-sm font-medium">
                                 {tx.direction === 'in' ? '+' : '-'}
-                                {tx.usdpAmount || (tx as any).zyraAmount} USDP
+                                {tx.usdpAmount || tx.zyraAmount} USDP
                               </span>
                             </div>
                           )}
@@ -229,7 +234,7 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
                 </div>
                 <div className="flex flex-col items-end space-y-2 ml-4">
                   <a
-                    href={`https://blockexplorer.minepi.com/testnet/tx/${tx.hash}`}
+                    href={explorerTxUrl(tx.hash)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center space-x-1"
@@ -238,9 +243,9 @@ export function TransactionHistory({ walletAddress }: TransactionHistoryProps) {
                     <span>View</span>
                   </a>
                   <div className="text-xs text-muted-foreground space-y-1">
-                    {(tx.usdpFee || (tx as any).zyraFee) && (
+                    {(tx.usdpFee || tx.zyraFee) && (
                       <div>
-                        USDP Fee: {tx.usdpFee || (tx as any).zyraFee} USDP
+                        USDP Fee: {tx.usdpFee || tx.zyraFee} USDP
                       </div>
                     )}
                     <div>

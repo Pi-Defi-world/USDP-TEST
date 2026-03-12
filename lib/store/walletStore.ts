@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Balance, PoolInfo, ReserveStatus } from '@/types';
+import { Balance, ReserveStatus } from '@/types';
 import { apiClient } from '@/lib/api/client';
 
 interface WalletState {
@@ -9,7 +9,6 @@ interface WalletState {
   error: string | null;
   lastUpdate: Date | null;
   isTestnet: boolean;
-  poolInfo: PoolInfo | null;
   reserveStatus: ReserveStatus | null;
   
   // Actions
@@ -21,7 +20,6 @@ interface WalletState {
   clearWallet: () => void;
   fetchBalance: (address: string) => Promise<void>;
   fetchEnhancedBalance: (address: string) => Promise<void>;
-  fetchPoolInfo: () => Promise<void>;
   fetchReserveStatus: () => Promise<void>;
 }
 
@@ -45,7 +43,6 @@ export const useWalletStore = create<WalletState>((set, get) => {
     error: null,
     lastUpdate: null,
     isTestnet: false,
-    poolInfo: null,
     reserveStatus: null,
   
     setWalletAddress: (address) => set({ walletAddress: address }),
@@ -58,7 +55,6 @@ export const useWalletStore = create<WalletState>((set, get) => {
       balance: null, 
       error: null, 
       lastUpdate: null,
-      poolInfo: null,
       reserveStatus: null,
     }),
   
@@ -103,21 +99,6 @@ export const useWalletStore = create<WalletState>((set, get) => {
         error: error instanceof Error ? error.message : 'Failed to fetch enhanced balance', 
         isLoading: false 
       });
-    }
-  },
-
-  fetchPoolInfo: async () => {
-    const isTestnet = get().isTestnet || checkTestnetMode();
-    if (!isTestnet) return;
-
-    try {
-      const response = await apiClient.getPoolInfo();
-      if (response.success && response.data) {
-        set({ poolInfo: response.data as PoolInfo });
-      }
-    } catch (error) {
-      console.error('Failed to fetch pool info:', error);
-      // Don't set error state for pool info as it's optional
     }
   },
 

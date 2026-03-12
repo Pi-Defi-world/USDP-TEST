@@ -32,12 +32,12 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
   const { balance } = useWalletStore();
   const isTestnet = apiClient.isTestnetMode();
 
-  // Calculate Pi output and fees
+  // Calculate Pi output and fees based on the off-chain USD reserve model.
   const usdpAmount = parseFloat(amount) || 0;
   const usdValue = usdpAmount; // 1 USDP = 1 USD
   const redeemFee = usdValue * 0.003; // 0.3% fee on USD value
   const netUsdValue = usdValue - redeemFee; // USD value after fee
-  // Pi output = (USD value - fee) / Pi price (no overcollateralization on redeem)
+  // Pi output = (USD value - fee) / Pi price (no overcollateralization on redeem).
   const currentPiPrice = piPrice || 0;
   const piOutput = currentPiPrice > 0 ? netUsdValue / currentPiPrice : 0;
 
@@ -269,7 +269,7 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              If reserve has insufficient Pi, the system will automatically swap USD-TEST for Pi from the pool.
+              On testnet, this simulates returning USDP to the issuer and receiving Pi back from the reserve at the current oracle price.
             </AlertDescription>
           </Alert>
         )}

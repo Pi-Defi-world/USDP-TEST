@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { usePi } from '@/components/providers/pi-provider';
 import { TestnetBadge } from '@/components/TestnetBadge';
 import { apiClient } from '@/lib/api/client';
-import { Home, Settings, LogOut, Wallet, TrendingUp } from 'lucide-react';
+import { Home, Settings, LogOut, Wallet, TrendingUp, PiggyBank, Shield, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function DashboardNavbar() {
@@ -22,8 +22,11 @@ export function DashboardNavbar() {
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: Home },
-    { href: '/settings', label: 'Settings', icon: Settings },
+    { href: '/dashboard/save', label: 'Save', icon: PiggyBank },
+    { href: '/dashboard/reserve', label: 'Reserves & Health', icon: Shield },
     { href: '/stats', label: 'Stats', icon: TrendingUp },
+    { href: '/developers', label: 'Developers', icon: Code },
+    { href: '/settings', label: 'Settings', icon: Settings },
   ];
 
   return (

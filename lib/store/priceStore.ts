@@ -94,7 +94,8 @@ export const usePriceStore = create<PriceState>((set, get) => {
       });
     }
   },
-}));
+};
+});
 
 interface StatsState {
   stats: Stats | null;

@@ -32,8 +32,10 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
   const { balance } = useWalletStore();
   const isTestnet = apiClient.isTestnetMode();
 
-  // Calculate USDP output and fees
-  const OVERCOLLATERALIZATION_RATIO = 1.15; // 115% overcollateralization
+  // Calculate USDP output and fees based on off-chain USD reserve model.
+  // The frontend still illustrates an overcollateralization buffer, but the
+  // actual peg is maintained off-chain via the issuer's USD reserves.
+  const OVERCOLLATERALIZATION_RATIO = 1.15; // 115% illustrative overcollateralization
   const piAmount = parseFloat(amount) || 0;
   const usdValue = piAmount * (piPrice || 0); // Convert Pi to USD value
   const mintFee = usdValue * 0.003; // 0.3% fee on USD value
@@ -41,7 +43,7 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
   const piRequired = piAmount * OVERCOLLATERALIZATION_RATIO; // Pi required with 115% overcollateralization
   const overcollateralizationAmount = piRequired - piAmount; // Extra Pi locked
 
-  // Check if user has sufficient Pi balance (accounting for overcollateralization)
+  // Check if user has sufficient Pi balance (accounting for the displayed buffer)
   const piBalance = parseFloat(balance?.pi?.amount || '0');
   const hasSufficientBalance = piBalance >= piRequired;
 
@@ -281,7 +283,7 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              On testnet, USD-TEST will be transferred to reserve and 70% of Pi will be allocated to the liquidity pool.
+              On testnet, this simulates sending Pi into the USDP reserve and receiving USDP at a 1:1 USD reference rate using oracle pricing.
             </AlertDescription>
           </Alert>
         )}

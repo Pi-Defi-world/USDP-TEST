@@ -9,15 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TestnetBadge } from '@/components/TestnetBadge';
 import { ReservePoolBreakdown } from '@/components/ReservePoolBreakdown';
-import { PoolInfoCard } from '@/components/PoolInfoCard';
 import { apiClient } from '@/lib/api/client';
-import { PoolInfo, ReserveStatus, CollateralBreakdown } from '@/types';
+import { ReserveStatus, CollateralBreakdown } from '@/types';
 import { TrendingUp, DollarSign, Users, Activity, Shield, Zap } from 'lucide-react';
 
 export default function StatsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isTestnet, setIsTestnet] = useState(false);
-  const [poolInfo, setPoolInfo] = useState<PoolInfo | null>(null);
   const [reserveStatus, setReserveStatus] = useState<ReserveStatus | null>(null);
   const [collateralBreakdown, setCollateralBreakdown] = useState<CollateralBreakdown | null>(null);
   const [stats, setStats] = useState({
@@ -51,36 +49,33 @@ export default function StatsPage() {
         // Fetch stats from API
         const statsResponse = await apiClient.getStatsLegacy();
         if (statsResponse.success && statsResponse.data) {
-          const statsData = statsResponse.data as any;
+          const d = statsResponse.data as {
+            totalPiReserve?: string; totalUsdReserve?: string; totalUSDPSupply?: string;
+            totalUSDPUsdValue?: string; backingRatio?: string; reserveSurplus?: string;
+            totalFeesCollected?: string; totalVolume?: string;
+            totalMints?: number; totalRedeems?: number; totalTransactions?: number; totalHolders?: number;
+            piPrice?: number; isFullyBacked?: boolean;
+          };
           setStats({
-            totalPiReserve: statsData.totalPiReserve || '0.0000000',
-            totalUsdReserve: statsData.totalUsdReserve || '0.00',
-            totalUSDPSupply: statsData.totalUSDPSupply || '0.0000000',
-            totalUSDPUsdValue: statsData.totalUSDPUsdValue || '0.00',
-            backingRatio: statsData.backingRatio || '0.00%',
-            reserveSurplus: statsData.reserveSurplus || '0.00',
-            totalFeesCollected: statsData.totalFeesCollected || '0.0000000',
-            totalVolume: statsData.totalVolume || '0.00',
-            totalMints: statsData.totalMints || 0,
-            totalRedeems: statsData.totalRedeems || 0,
-            totalTransactions: statsData.totalTransactions || 0,
-            totalHolders: statsData.totalHolders || 0,
-            piPrice: statsData.piPrice || 0,
-            isFullyBacked: statsData.isFullyBacked || false,
+            totalPiReserve: d.totalPiReserve || '0.0000000',
+            totalUsdReserve: d.totalUsdReserve || '0.00',
+            totalUSDPSupply: d.totalUSDPSupply || '0.0000000',
+            totalUSDPUsdValue: d.totalUSDPUsdValue || '0.00',
+            backingRatio: d.backingRatio || '0.00%',
+            reserveSurplus: d.reserveSurplus || '0.00',
+            totalFeesCollected: d.totalFeesCollected || '0.0000000',
+            totalVolume: d.totalVolume || '0.00',
+            totalMints: d.totalMints ?? 0,
+            totalRedeems: d.totalRedeems ?? 0,
+            totalTransactions: d.totalTransactions ?? 0,
+            totalHolders: d.totalHolders ?? 0,
+            piPrice: d.piPrice ?? 0,
+            isFullyBacked: d.isFullyBacked ?? false,
           });
         }
 
         // Fetch testnet-specific data if in testnet mode
         if (testnetMode) {
-          try {
-            const poolResponse = await apiClient.getPoolInfo();
-            if (poolResponse.success && poolResponse.data) {
-              setPoolInfo(poolResponse.data as PoolInfo);
-            }
-          } catch (error) {
-            console.error('Failed to fetch pool info:', error);
-          }
-
           try {
             const reserveResponse = await apiClient.getReserveStatus();
             if (reserveResponse.success && reserveResponse.data) {
@@ -364,13 +359,6 @@ export default function StatsPage() {
         {isTestnet && collateralBreakdown && (
           <div className="mb-8">
             <ReservePoolBreakdown breakdown={collateralBreakdown} isTestnet={isTestnet} />
-          </div>
-        )}
-
-        {/* Testnet-specific: Pool Info */}
-        {isTestnet && poolInfo && (
-          <div className="mb-8">
-            <PoolInfoCard poolInfo={poolInfo} isTestnet={isTestnet} />
           </div>
         )}
       </div>

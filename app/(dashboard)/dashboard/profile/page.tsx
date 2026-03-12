@@ -131,7 +131,7 @@ export default function ProfilePage() {
         throw new Error(data.error || "Import failed")
       }
     } catch (err) {
-      const message = err && typeof err === "object" && "message" in err ? (err as any).message : "Import failed"
+      const message = err instanceof Error ? err.message : "Import failed"
       toast({ 
         title: "Import failed", 
         description: message, 
@@ -226,14 +226,16 @@ export default function ProfilePage() {
             {balance && (
               <div className="grid grid-cols-2 gap-3 text-center pt-2">
                 <div className="p-2 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">Balance</p>
+                  <p className="text-xs text-muted-foreground">Pi</p>
                   <p className="text-sm font-semibold">
-                    {balance.balances?.[0]?.amount?.toFixed(2) || "0.00"} {balance.balances?.[0]?.assetCode || "PI"}
+                    {parseFloat(balance.pi?.amount ?? "0").toFixed(2)} PI
                   </p>
                 </div>
                 <div className="p-2 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">Assets</p>
-                  <p className="text-sm font-semibold">{balance.balances?.length || 0}</p>
+                  <p className="text-xs text-muted-foreground">USDP</p>
+                  <p className="text-sm font-semibold">
+                    {parseFloat(balance.usdp?.amount ?? balance.zyra?.amount ?? "0").toFixed(2)} USDP
+                  </p>
                 </div>
               </div>
             )}

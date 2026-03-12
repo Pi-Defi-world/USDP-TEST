@@ -36,7 +36,6 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const isTestnet = apiClient.isTestnetMode();
-  const assetLabel = isTestnet ? 'USD-TEST' : 'USDC';
 
   const fetchData = async () => {
     try {
@@ -133,7 +132,7 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              You don't have an active collateral position. Mint USDP tokens to create a position.
+              You don&apos;t have an active collateral position. Mint USDP tokens to create a position.
             </AlertDescription>
           </Alert>
         </CardContent>

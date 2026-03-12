@@ -215,9 +215,13 @@ class ApiClient {
     return this.request('/health/reserve');
   }
 
-  // Get liquidity pool information
+  async getReserveSummary() {
+    return this.request('/health/reserve-summary');
+  }
+
+ 
   async getPoolInfo() {
-    return this.request('/health/pool');
+    return Promise.resolve({ success: false, data: null });
   }
 
   // Check if running on testnet
@@ -328,6 +332,34 @@ class ApiClient {
   // Risk Signals (admin/internal)
   async getRiskSignals() {
     return this.request('/stablecoin/risk-signals');
+  }
+
+  // Savings
+  async getSavingsBalance() {
+    return this.request('/savings/balance');
+  }
+
+  async getSavingsRate() {
+    return this.request('/savings/rate');
+  }
+
+  async savingsDeposit(amount: number, txHash?: string) {
+    return this.request('/savings/deposit', {
+      method: 'POST',
+      body: JSON.stringify({ amount, txHash }),
+    });
+  }
+
+  async savingsWithdraw(amount: number, txHash?: string) {
+    return this.request('/savings/withdraw', {
+      method: 'POST',
+      body: JSON.stringify({ amount, txHash }),
+    });
+  }
+
+  async getSavingsHistory(limit?: number) {
+    const params = limit ? `?limit=${limit}` : '';
+    return this.request(`/savings/history${params}`);
   }
 }
 
