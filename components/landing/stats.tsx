@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import Image from 'next/image';
 import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { cn } from '@/lib/utils';
 
 const stats = [
   { label: 'PUSD Value', value: 1, prefix: '$', decimals: 2, subtext: 'Always' },
   { label: 'In circulation', value: 0, suffix: '', decimals: 0, subtext: 'PUSD' },
-  { label: 'Backed', value: 115, suffix: '%', decimals: 0, subtext: 'Reserve ratio' },
+  { label: 'Backed', value: 100, suffix: '%', decimals: 0, subtext: 'Reserve ratio' },
   { label: 'Fee', value: 0.3, suffix: '%', decimals: 1, subtext: 'Per transaction' },
 ];
 
@@ -71,10 +72,34 @@ export function LandingStats() {
           ))}
         </div>
 
+        {/* Stability image strip */}
+        <div
+          className={cn(
+            "mt-16 max-w-3xl mx-auto rounded-2xl overflow-hidden border border-border transition-all duration-700 delay-300",
+            isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          )}
+        >
+          <div className="relative h-36">
+            <Image
+              src="/images/stability-visual.jpg"
+              alt="PUSD price stability at $1.00"
+              fill
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/80" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Price history</p>
+                <p className="text-2xl font-bold font-mono">$1.0000</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Reserve breakdown */}
         <div 
           className={cn(
-            "mt-20 max-w-lg mx-auto transition-all duration-700 delay-500",
+            "mt-8 max-w-lg mx-auto transition-all duration-700 delay-500",
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           )}
         >

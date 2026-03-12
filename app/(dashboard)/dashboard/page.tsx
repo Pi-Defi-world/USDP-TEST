@@ -207,7 +207,7 @@ export default function DashboardPage() {
               />
               <MetricCard
                 label="Backing"
-                value="115"
+                value="100"
                 suffix="%"
                 size="sm"
                 variant="accent"

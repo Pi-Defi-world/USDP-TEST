@@ -98,7 +98,7 @@ export default function SettingsPage() {
           <div className="space-y-3">
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">Reserve ratio</span>
-              <span className="font-medium">115%</span>
+              <span className="font-medium">100%</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">Fee</span>

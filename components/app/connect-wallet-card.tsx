@@ -2,9 +2,9 @@
 
 import { Button } from '@/components/ui/button';
 import { usePi } from '@/components/providers/pi-provider';
-import { Wallet, ArrowRight, Shield, Zap } from 'lucide-react';
+import { ArrowRight, Shield, Zap } from 'lucide-react';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 export function ConnectWalletCard() {
   const { authenticate } = usePi();
@@ -30,9 +30,20 @@ export function ConnectWalletCard() {
   return (
     <div className="flex items-center justify-center min-h-[75vh] px-4">
       <div className="w-full max-w-sm text-center">
-        {/* Icon */}
-        <div className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-foreground flex items-center justify-center">
-          <Wallet className="w-10 h-10 text-background" />
+        {/* Hero image */}
+        <div className="relative w-full h-40 mb-8 rounded-2xl overflow-hidden border border-border">
+          <Image
+            src="/images/reserve-visual.jpg"
+            alt="PUSD secure reserves"
+            fill
+            className="object-cover opacity-70"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-card/90 backdrop-blur-sm border border-border rounded-full px-4 py-1.5">
+            <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+            <span className="text-xs font-medium">100% Backed</span>
+          </div>
         </div>
         
         {/* Copy */}
@@ -67,7 +78,7 @@ export function ConnectWalletCard() {
           <div className="p-4 rounded-2xl bg-muted/50">
             <Shield className="w-5 h-5 text-accent mb-2" />
             <p className="text-sm font-medium mb-0.5">Secure</p>
-            <p className="text-xs text-muted-foreground">115% reserve backing</p>
+            <p className="text-xs text-muted-foreground">100% reserve backing</p>
           </div>
           <div className="p-4 rounded-2xl bg-muted/50">
             <Zap className="w-5 h-5 text-accent mb-2" />
