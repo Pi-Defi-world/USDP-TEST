@@ -195,7 +195,7 @@ export default function ProfilePage() {
               <User className="h-5 w-5" />
               Profile
             </CardTitle>
-            <CardDescription>Your USDP Profile</CardDescription>
+            <CardDescription>Your PUSD Profile</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
@@ -232,9 +232,9 @@ export default function ProfilePage() {
                   </p>
                 </div>
                 <div className="p-2 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">USDP</p>
+                  <p className="text-xs text-muted-foreground">PUSD</p>
                   <p className="text-sm font-semibold">
-                    {parseFloat(balance.usdp?.amount ?? balance.zyra?.amount ?? "0").toFixed(2)} USDP
+                    {parseFloat(balance.pusd?.amount ?? balance.zyra?.amount ?? "0").toFixed(2)} PUSD
                   </p>
                 </div>
               </div>
@@ -331,7 +331,7 @@ export default function ProfilePage() {
                 <LogOut className="h-5 w-5 text-destructive shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-sm text-destructive truncate">Disconnect Wallet</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">Logout from your USDP wallet</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">Logout from your PUSD wallet</div>
                 </div>
               </div>
             </button>

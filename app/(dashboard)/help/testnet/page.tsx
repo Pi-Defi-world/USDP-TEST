@@ -14,7 +14,7 @@ export default function TestnetHelpPage() {
           <TestnetBadge />
         </div>
         <p className="text-muted-foreground">
-          Learn about testnet operations and how to safely experiment with USDP without real funds.
+          Learn about testnet operations and how to safely experiment with PUSD without real funds.
         </p>
       </div>
 
@@ -29,7 +29,7 @@ export default function TestnetHelpPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              The testnet is a testing environment that simulates the mainnet USDP stablecoin system.
+              The testnet is a testing environment that simulates the mainnet PUSD stablecoin system.
               It allows developers and users to test functionality without using real assets.
             </p>
             <Alert>
@@ -54,7 +54,7 @@ export default function TestnetHelpPage() {
               <div>
                 <h3 className="font-semibold mb-2">Testnet</h3>
                 <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Runs on Pi Testnet with play‑money Pi and USDP.</li>
+                  <li>Runs on Pi Testnet with play‑money Pi and PUSD.</li>
                   <li>Used to test wallet flows, mint/redeem UX, and account management.</li>
                   <li>No real USD, no bank connections.</li>
                 </ul>
@@ -62,7 +62,7 @@ export default function TestnetHelpPage() {
               <div>
                 <h3 className="font-semibold mb-2">Mainnet (Future)</h3>
                 <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Will connect USDP to an off‑chain USD reserve (cash + T‑bills).</li>
+                  <li>Will connect PUSD to an off‑chain USD reserve (cash + T‑bills).</li>
                   <li>Same Soroban contracts, but with real banking/treasury integrations.</li>
                   <li>Subject to stricter operational and compliance controls.</li>
                 </ul>

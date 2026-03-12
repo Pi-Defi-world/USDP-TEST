@@ -10,7 +10,7 @@ export default function DevelopersPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">For Developers</h1>
         <p className="text-sm text-muted-foreground">
-          Integrate USDP into your app with the Business API: accept payments, check balances, and build on Pi.
+          Integrate PUSD into your app with the Business API: accept payments, check balances, and build on Pi.
         </p>
       </div>
 
@@ -39,7 +39,7 @@ export default function DevelopersPage() {
               <strong>GET /api/v1/business/payments/:id</strong> — Get payment status (id or reference)
             </li>
             <li>
-              <strong>GET /api/v1/business/balance</strong> — Get merchant USDP balance
+              <strong>GET /api/v1/business/balance</strong> — Get merchant PUSD balance
             </li>
           </ul>
           <p className="text-sm text-muted-foreground">
@@ -48,7 +48,7 @@ export default function DevelopersPage() {
             <code className="rounded bg-muted px-1">payment.failed</code>.
           </p>
           <p className="text-sm text-muted-foreground">
-            Full API reference: see <code className="rounded bg-muted px-1">Usdp-Mainnet-backend-v1/docs/BUSINESS-API.md</code> in the repo.
+            Full API reference: see <code className="rounded bg-muted px-1">pusd-backend/docs/BUSINESS-API.md</code> in the repo.
           </p>
         </CardContent>
       </Card>
@@ -71,13 +71,13 @@ export default function DevelopersPage() {
           <pre className="rounded-lg bg-muted p-4 text-xs overflow-x-auto">
 {`import { createBusinessClient } from '@/lib/api/businessClient';
 
-const client = createBusinessClient(process.env.USDP_API_KEY!, process.env.USDP_API_BASE);
+const client = createBusinessClient(process.env.PUSD_API_KEY!, process.env.PUSD_API_BASE);
 const { data } = await client.createPayment({ amount: 10, reference: 'order-1' });
 // data.payUrl -> send customer here`}
           </pre>
           <p>
             For testnet, point <code className="rounded bg-muted px-1">baseUrl</code> to your testnet backend and use a{' '}
-            <code className="rounded bg-muted px-1">usdp_test_</code> key. Test USDP and Pi are available on Pi Testnet.
+            <code className="rounded bg-muted px-1">pusd_test_</code> key. Test PUSD and Pi are available on Pi Testnet.
           </p>
         </CardContent>
       </Card>

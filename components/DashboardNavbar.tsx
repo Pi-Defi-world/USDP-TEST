@@ -36,7 +36,7 @@ export function DashboardNavbar() {
           <div className="flex items-center space-x-8">
             <Link href="/dashboard" className="flex items-center space-x-2">
               <Wallet className="h-6 w-6 text-blue-600" />
-              <span className="font-bold text-xl">USDP</span>
+              <span className="font-bold text-xl">PUSD</span>
               {isTestnet && <TestnetBadge className="ml-2" />}
             </Link>
             <div className="flex items-center space-x-1">
