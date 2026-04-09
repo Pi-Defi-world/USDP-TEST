@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { usePi } from '@/components/providers/pi-provider';
 import { TestnetBadge } from '@/components/TestnetBadge';
@@ -10,14 +10,28 @@ import { Home, Settings, LogOut, Wallet, TrendingUp, PiggyBank, Shield, Code } f
 import { cn } from '@/lib/utils';
 
 export function DashboardNavbar() {
-  const pathname = usePathname();
-  const router = useRouter();
+  const [pathname, setPathname] = useState<string | null>(null);
   const { signOut, isAuthenticated } = usePi();
   const isTestnet = apiClient.isTestnetMode();
 
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setPathname(window.location.pathname);
+    };
+
+    handleLocationChange();
+    window.addEventListener('popstate', handleLocationChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+    };
+  }, []);
+
   const handleLogout = () => {
     signOut();
-    router.push('/');
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   };
 
   const navItems = [

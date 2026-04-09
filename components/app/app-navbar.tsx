@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { usePi } from '@/components/providers/pi-provider';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -15,16 +14,27 @@ interface AppNavbarProps {
 }
 
 export function AppNavbar({ title, showBack = false, backHref = '/dashboard' }: AppNavbarProps) {
-  const pathname = usePathname();
   const { user, isAuthenticated } = usePi();
   const [scrolled, setScrolled] = useState(false);
+  const [pathname, setPathname] = useState<string | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
     };
+    const handleLocationChange = () => {
+      setPathname(window.location.pathname);
+    };
+
+    handleLocationChange();
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('popstate', handleLocationChange);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('popstate', handleLocationChange);
+    };
   }, []);
 
   const pageTitle = title || getPageTitle(pathname);

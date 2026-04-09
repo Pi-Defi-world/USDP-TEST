@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Home, BarChart3, Settings, Wallet } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const navItems = [
   { href: '/dashboard', icon: Home, label: 'Home' },
@@ -13,7 +13,20 @@ const navItems = [
 ];
 
 export function BottomNav() {
-  const pathname = usePathname();
+  const [pathname, setPathname] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setPathname(window.location.pathname);
+    };
+
+    handleLocationChange();
+    window.addEventListener('popstate', handleLocationChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+    };
+  }, []);
 
   return (
     <div className="bottom-nav lg:hidden">

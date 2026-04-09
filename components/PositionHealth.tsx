@@ -159,7 +159,8 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
     LIQUIDATION: { color: 'text-red-700', bg: 'bg-red-100', icon: AlertCircle, label: 'Liquidation Risk' },
   };
 
-  const healthInfo = healthConfig[health] || healthConfig.SAFE;
+  const healthInfo =
+    health in healthConfig ? healthConfig[health as keyof typeof healthConfig] : healthConfig.SAFE;
   const HealthIcon = healthInfo.icon;
 
   // Volatility tier badge
@@ -353,9 +354,10 @@ export function PositionHealth({ walletAddress, onActionClick }: PositionHealthP
                             try {
                               const response = await apiClient.acceptSoftLiquidation(walletAddress, offer.id);
                               if (response.success) {
+                                const payload = response.data as { debtToRepay: number; penaltyAmount: number };
                                 toast({
                                   title: 'Soft Liquidation Accepted',
-                                  description: `You will repay ${response.data.debtToRepay.toFixed(2)} PUSD with a ${response.data.penaltyAmount.toFixed(2)} PUSD penalty.`,
+                                  description: `You will repay ${payload.debtToRepay.toFixed(2)} PUSD with a ${payload.penaltyAmount.toFixed(2)} PUSD penalty.`,
                                 });
                                 fetchData();
                               }

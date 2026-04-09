@@ -38,7 +38,10 @@ export default function SavePage() {
   const loadRate = async () => {
     try {
       const res = await apiClient.getSavingsRate();
-      if (res?.success && res?.data) setApy(res.data.apy ?? 0);
+      if (res?.success && res?.data) {
+        const rate = res.data as { apy?: number };
+        setApy(rate.apy ?? 0);
+      }
     } catch {
       // ignore
     }
@@ -47,9 +50,10 @@ export default function SavePage() {
   const loadHistory = async () => {
     try {
       const res = await apiClient.getSavingsHistory(20);
-      if (res?.success && res?.data?.transactions) {
+      const hist = res?.success && res?.data ? (res.data as { transactions?: Array<{ id: string; type: string; amount: string; balanceAfter: string | null; createdAt: string }> }) : null;
+      if (hist?.transactions) {
         setHistory(
-          res.data.transactions.map((t: { id: string; type: string; amount: string; balanceAfter: string | null; createdAt: string }) => ({
+          hist.transactions.map((t) => ({
             id: t.id,
             type: t.type,
             amount: t.amount,

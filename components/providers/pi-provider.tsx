@@ -16,11 +16,53 @@ interface PiContextType {
   isLoading: boolean
   authenticate: () => Promise<PiAuthResult>
   signOut: () => void
+  createPayment: (
+    amount: number,
+    memo: string,
+    metadata?: any,
+    donationData?: { userId: string; amount: number; memo: string; metadata?: Record<string, unknown> }
+  ) => Promise<any>
 }
 
 const PiContext = createContext<PiContextType | undefined>(undefined)
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+
+async function approvePiPayment(paymentId: string) {
+  const res = await fetch(`${API_URL}/pi-payments/approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ paymentId }),
+  })
+  if (!res.ok) {
+    const msg = res.status === 503
+      ? "Payment approval unavailable (backend PI_API_KEY may be missing or invalid)."
+      : "Payment approval failed"
+    throw new Error(msg)
+  }
+}
+
+async function completePiPayment(
+  paymentId: string,
+  txid: string,
+  donationData?: { userId: string; amount: number; memo: string; metadata?: Record<string, unknown> }
+) {
+  const res = await fetch(`${API_URL}/pi-payments/complete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ paymentId, txid, donationData }),
+  })
+  if (!res.ok) throw new Error("Payment completion failed")
+}
+
+async function cancelPiPayment(paymentId: string) {
+  const res = await fetch(`${API_URL}/pi-payments/cancel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ paymentId }),
+  })
+  if (!res.ok) throw new Error("Payment cancel failed")
+}
 
 export function PiProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<PiUser | null>(null)
@@ -51,27 +93,8 @@ export function PiProvider({ children }: { children: ReactNode }) {
     initSDK()
   }, [])
 
-  // Restore saved auth on mount
-  useEffect(() => {
-    if (typeof window === "undefined") return
-
-    const savedToken = localStorage.getItem("pi_access_token")
-    const savedUser = localStorage.getItem("pi_user")
-
-    if (savedToken && savedUser) {
-      try {
-        const userData: PiUser = JSON.parse(savedUser)
-        setUser(userData)
-        setAccessToken(savedToken)
-        setIsAuthenticated(true)
-        console.log("✅ Restored auth:", userData.username || userData.uid)
-      } catch (error) {
-        console.error("Error restoring auth:", error)
-        localStorage.removeItem("pi_access_token")
-        localStorage.removeItem("pi_user")
-      }
-    }
-  }, [])
+  // Do not restore auth from localStorage — always require explicit Pi.authenticate()
+  // so the SDK has a session with payments scope in this page load.
 
   const authenticate = useCallback(async (): Promise<PiAuthResult> => {
     console.log("🔐 authenticate() called")
@@ -83,11 +106,13 @@ export function PiProvider({ children }: { children: ReactNode }) {
     setIsLoading(true)
     try {
       const onIncompletePaymentFound = (payment: PiPaymentDTO) => {
-        console.warn("⚠️ Incomplete payment found:", payment)
+        console.warn("⚠️ Incomplete payment found:", payment.identifier)
+        cancelPiPayment(payment.identifier).catch((err) =>
+          console.error("Error cancelling incomplete payment:", err)
+        )
       }
-      
+
       console.log("🔑 Calling Pi.authenticate()...")
-      
       const auth = await window.Pi.authenticate(
         ["username", "payments", "wallet_address"],
         onIncompletePaymentFound
@@ -166,8 +191,107 @@ export function PiProvider({ children }: { children: ReactNode }) {
     console.log("✅ Signed out")
   }
 
+  const createPayment = async (
+    amount: number,
+    memo: string,
+    metadata?: any,
+    donationData?: { userId: string; amount: number; memo: string; metadata?: Record<string, unknown> }
+  ) => {
+    if (!isAuthenticated || !user) {
+      throw new Error("User must be authenticated to make payments")
+    }
+
+    if (typeof window === "undefined" || !(window as any).Pi) {
+      throw new Error("Pi SDK not available. Please open in Pi Browser.")
+    }
+
+    try {
+      // Ensure Pi SDK has a session with payments scope in this page load.
+      // Restored localStorage auth does not give the SDK payments scope until we run authenticate().
+      const authResult = await authenticate()
+      const paymentUser = authResult.user
+
+      ;(window as any).Pi.init({ version: "2.0", sandbox: true })
+
+      return await new Promise((resolve, reject) => {
+        const callbacks = {
+          onReadyForServerApproval: async (paymentId: string) => {
+            console.log("Payment ready for approval:", paymentId)
+            try {
+              await approvePiPayment(paymentId)
+            } catch (err) {
+              console.error("Payment approval failed:", err)
+              reject(err)
+            }
+          },
+          onReadyForServerCompletion: async (paymentId: string, txid: string) => {
+            console.log("Payment ready for completion:", paymentId, txid)
+            try {
+              const dataToSend =
+                donationData ||
+                {
+                  userId: paymentUser.uid,
+                  amount,
+                  memo,
+                  metadata: metadata || {},
+                }
+              await completePiPayment(paymentId, txid, dataToSend)
+              resolve({ success: true, paymentId, txid })
+            } catch (err) {
+              console.error("Payment completion failed:", err)
+              reject(err)
+            }
+          },
+          onCancel: (paymentId: string) => {
+            console.log("Payment cancelled:", paymentId)
+            reject(new Error("Payment was cancelled"))
+          },
+          onError: (error: Error, payment?: PiPaymentDTO) => {
+            console.error("Payment error:", error, payment)
+            const message = (error && (error as any).message) || String(error || '')
+
+            // Help user recover when payments scope is missing, like the sample.
+            if (message.toLowerCase().includes("payments") && message.toLowerCase().includes("scope")) {
+              console.warn("⚠️ Payments scope not granted. User needs to re-authenticate with payments enabled.")
+              // Clear local auth so next login can request payments scope cleanly
+              signOut()
+              if (typeof window !== "undefined") {
+                alert(
+                  "Pi payments permission is not enabled for this session.\n\n" +
+                    "Please log out in this app, then log in again in Pi Browser and make sure to grant the “payments” permission."
+                )
+              }
+              reject(
+                new Error(
+                  'Payment permissions required. Please log out and log back in via Pi Browser, granting the "payments" scope.'
+                )
+              )
+              return
+            }
+
+            reject(error)
+          },
+        }
+
+        ;(window as any).Pi.createPayment(
+          {
+            amount,
+            memo,
+            metadata: metadata || { type: "donation" },
+          },
+          callbacks
+        )
+      })
+    } catch (error) {
+      console.error("Payment creation failed:", error)
+      throw error
+    }
+  }
+
   return (
-    <PiContext.Provider value={{ user, accessToken, isAuthenticated, isLoading, authenticate, signOut }}>
+    <PiContext.Provider
+      value={{ user, accessToken, isAuthenticated, isLoading, authenticate, signOut, createPayment }}
+    >
       {children}
     </PiContext.Provider>
   )

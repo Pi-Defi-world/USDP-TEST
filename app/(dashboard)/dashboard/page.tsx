@@ -17,9 +17,12 @@ import { ConnectWalletCard } from '@/components/app/connect-wallet-card';
 import { BalanceCard } from '@/components/app/balance-card';
 import { QuickActions } from '@/components/app/quick-actions';
 import { MetricCard } from '@/components/ui/metric-card';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const { isAuthenticated, user, authenticate } = usePi();
+  const router = useRouter();
   const { walletAddress, balance, fetchBalance, isLoading: walletLoading } = useWalletStore();
   const { piPrice, fetchPiPrice, isLoading: priceLoading } = usePriceStore();
   const [isLoading, setIsLoading] = useState(true);
@@ -172,6 +175,17 @@ export default function DashboardPage() {
 
         {/* Quick Actions */}
         <QuickActions onMint={() => setActiveTab('mint')} onRedeem={() => setActiveTab('redeem')} />
+
+        {/* Donation entry point */}
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push('/donate')}
+          >
+            Donation
+          </Button>
+        </div>
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

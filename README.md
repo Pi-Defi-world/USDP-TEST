@@ -102,7 +102,7 @@ pusd-platform/
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd usdp-platform
+   cd PUSD-platform
    ```
 
 2. **Install dependencies**

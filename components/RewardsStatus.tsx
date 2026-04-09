@@ -219,10 +219,10 @@ export function RewardsStatus({ walletAddress }: RewardsStatusProps) {
 
               {reward.metadata && (
                 <div className="text-xs text-muted-foreground">
-                  {reward.metadata.daysMaintained && (
+                  {typeof reward.metadata.daysMaintained === 'number' && (
                     <span>Maintained for {reward.metadata.daysMaintained} days</span>
                   )}
-                  {reward.metadata.responseTimeHours && (
+                  {typeof reward.metadata.responseTimeHours === 'number' && (
                     <span>Responded in {reward.metadata.responseTimeHours.toFixed(1)}h</span>
                   )}
                 </div>

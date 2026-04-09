@@ -45,7 +45,7 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
   const netUsdValue = usdValue - redeemFee;
   const currentPiPrice = piPrice || 0;
   const piOutput = currentPiPrice > 0 ? netUsdValue / currentPiPrice : 0;
-  const pusdBalance = parseFloat(balance?.usdp?.amount || '0');
+  const pusdBalance = parseFloat(balance?.pusd?.amount || '0');
   const hasSufficientBalance = pusdBalance >= pusdAmount;
 
   const handleRedeem = () => {

@@ -7,18 +7,18 @@ import { apiClient } from '@/lib/api/client';
 import { usePi } from '@/components/providers/pi-provider';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, Network, LogOut, User, Shield, HelpCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function SettingsPage() {
   const isTestnet = apiClient.isTestnetMode();
   const { user, signOut, isAuthenticated } = usePi();
-  const router = useRouter();
   const usdTestAssetCode = process.env.NEXT_PUBLIC_USD_TEST_ASSET_CODE || 'USDTEST';
 
   const handleSignOut = () => {
     signOut();
-    router.push('/');
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   };
 
   return (
