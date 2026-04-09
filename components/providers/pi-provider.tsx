@@ -26,7 +26,7 @@ interface PiContextType {
 
 const PiContext = createContext<PiContextType | undefined>(undefined)
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api'
 
 async function approvePiPayment(paymentId: string) {
   const res = await fetch(`${API_URL}/pi-payments/approve`, {

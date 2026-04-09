@@ -110,7 +110,7 @@ export default function TestnetHelpPage() {
                 <div className="text-muted-foreground mt-1"># Set to &apos;testnet&apos; or &apos;mainnet&apos;</div>
               </div>
               <div className="p-3 bg-muted rounded-lg font-mono text-sm">
-                <div>NEXT_PUBLIC_SERVER_URL=http://localhost:3001</div>
+                <div>NEXT_PUBLIC_SERVER_URL=http://localhost:8001</div>
                 <div className="text-muted-foreground mt-1"># Backend API URL</div>
               </div>
               <div className="p-3 bg-muted rounded-lg font-mono text-sm">

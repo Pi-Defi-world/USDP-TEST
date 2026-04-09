@@ -144,7 +144,7 @@ pusd-platform/
 
    # Testnet Configuration (Frontend)
    NEXT_PUBLIC_NETWORK=testnet
-   NEXT_PUBLIC_SERVER_URL=http://localhost:3001
+   NEXT_PUBLIC_SERVER_URL=http://localhost:8001
    NEXT_PUBLIC_USD_TEST_ASSET_CODE=USDTEST
    ```
 
@@ -324,7 +324,7 @@ Add to `.env.local`:
 ```env
 # Testnet Configuration
 NEXT_PUBLIC_NETWORK=testnet
-NEXT_PUBLIC_SERVER_URL=http://localhost:3001
+NEXT_PUBLIC_SERVER_URL=http://localhost:8001
 NEXT_PUBLIC_USD_TEST_ASSET_CODE=USDTEST
 ```
 
