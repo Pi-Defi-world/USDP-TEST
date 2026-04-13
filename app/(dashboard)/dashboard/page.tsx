@@ -5,12 +5,12 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePi } from '@/components/providers/pi-provider';
 import { useWalletStore } from '@/lib/store/walletStore';
-import { usePriceStore } from '@/lib/store/priceStore';
+import { usePriceStore, useStatsStore } from '@/lib/store/priceStore';
+import { useAuthStore } from '@/lib/store/authStore';
 import { MintForm } from '@/components/MintForm';
 import { RedeemForm } from '@/components/RedeemForm';
 import { TransactionHistory } from '@/components/TransactionHistory';
 import { apiClient } from '@/lib/api/client';
-import { ReserveStatus } from '@/types';
 import { TrendingUp, Shield, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConnectWalletCard } from '@/components/app/connect-wallet-card';
@@ -25,35 +25,39 @@ export default function DashboardPage() {
   const router = useRouter();
   const { walletAddress, balance, fetchBalance, isLoading: walletLoading } = useWalletStore();
   const { piPrice, fetchPiPrice, isLoading: priceLoading } = usePriceStore();
+  const { stats, fetchStats } = useStatsStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const [reserveStatus, setReserveStatus] = useState<ReserveStatus | null>(null);
   
   // Pull to refresh state
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
 
+  const [hasLocalWallet, setHasLocalWallet] = useState<boolean | null>(null);
+
   const loadData = useCallback(async () => {
     try {
       await fetchPiPrice();
+      fetchStats();
       
-      if (walletAddress) {
+      if (walletAddress && walletAddress.startsWith('G')) {
         await fetchBalance(walletAddress);
-      }
-
-      try {
-        const reserveResponse = await apiClient.getReserveStatus();
-        if (reserveResponse.success && reserveResponse.data) {
-          setReserveStatus(reserveResponse.data as ReserveStatus);
-        }
-      } catch (error) {
-        console.error('Failed to fetch reserve status:', error);
+        
+        // Check if wallet is accessible locally
+        const hasWallet = await useAuthStore.getState().hasWalletInIndexedDB(walletAddress);
+        setHasLocalWallet(hasWallet);
+      } else {
+        setHasLocalWallet(false);
       }
     } catch (error) {
-      console.error('Failed to load dashboard data:', error);
+      // For 404 errors during loadData, we just silently ignore them instead of failing the whole dashboard
+      const isNotFoundError = error instanceof Error && (error as any).status === 404;
+      if (!isNotFoundError) {
+        console.error('Failed to load dashboard data:', error);
+      }
     }
-  }, [walletAddress, fetchPiPrice, fetchBalance]);
+  }, [walletAddress, fetchPiPrice, fetchBalance, fetchStats]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -174,107 +178,63 @@ export default function DashboardPage() {
         />
 
         {/* Quick Actions */}
-        <QuickActions onMint={() => setActiveTab('mint')} onRedeem={() => setActiveTab('redeem')} />
+        <QuickActions 
+          onMint={() => router.push('/dashboard/mint')} 
+          onRedeem={() => router.push('/dashboard/mint?tab=redeem')} 
+        />
 
-        {/* Donation entry point */}
-        <div className="flex justify-end">
-          <Button
-            variant="outline"
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 gap-3">
+          <MetricCard
+            label="Pi Price"
+            value={piPrice?.toFixed(4) || '0.0000'}
+            prefix="$"
             size="sm"
-            onClick={() => router.push('/donate')}
-          >
-            Donation
-          </Button>
+          />
+          <MetricCard
+            label="Backing"
+            value={stats?.backingRatio.replace('%', '') || '100'}
+            suffix="%"
+            size="sm"
+            variant="accent"
+          />
         </div>
 
-        {/* Main Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 rounded-xl h-11">
-            <TabsTrigger 
-              value="overview" 
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm"
+        {/* Wallet Info */}
+        <Card className="p-4 bg-card border-border">
+          <p className="text-xs text-muted-foreground mb-1.5 uppercase tracking-wide">Wallet</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-mono text-foreground/90 truncate flex-1">
+              {walletAddress || 'Not connected'}
+            </p>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 text-xs px-2"
+              onClick={() => router.push('/settings')}
             >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger 
-              value="mint"
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm"
+              Manage
+            </Button>
+          </div>
+        </Card>
+
+        {/* Transaction History */}
+        <div className="pt-2">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+              Activity
+            </h3>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 text-xs px-2"
+              onClick={() => router.push('/dashboard/history')}
             >
-              Mint
-            </TabsTrigger>
-            <TabsTrigger 
-              value="redeem"
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-sm"
-            >
-              Redeem
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-4 animate-fade-in">
-            {/* Stats Row */}
-            <div className="grid grid-cols-2 gap-3">
-              <MetricCard
-                label="Pi Price"
-                value={piPrice?.toFixed(4) || '0.0000'}
-                prefix="$"
-                size="sm"
-              />
-              <MetricCard
-                label="Backing"
-                value="100"
-                suffix="%"
-                size="sm"
-                variant="accent"
-              />
-            </div>
-
-            {/* Wallet Info */}
-            <Card className="p-4 bg-card border-border">
-              <p className="text-xs text-muted-foreground mb-1.5 uppercase tracking-wide">Wallet</p>
-              <p className="text-sm font-mono text-foreground/90 truncate">
-                {walletAddress || 'Not connected'}
-              </p>
-            </Card>
-
-            {/* Transaction History */}
-            <div className="pt-2">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
-                Activity
-              </h3>
-              <TransactionHistory walletAddress={walletAddress || undefined} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="mint" className="animate-fade-in min-h-[400px]">
-            {walletAddress ? (
-              <MintForm 
-                walletAddress={walletAddress} 
-                onTransactionComplete={handleRefresh}
-              />
-            ) : (
-              <Card className="p-8 text-center bg-card border-border">
-                <p className="text-muted-foreground">
-                  Connect your wallet to mint PUSD
-                </p>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="redeem" className="animate-fade-in min-h-[400px]">
-            {walletAddress ? (
-              <RedeemForm 
-                walletAddress={walletAddress} 
-                onTransactionComplete={handleRefresh}
-              />
-            ) : (
-              <Card className="p-8 text-center bg-card border-border">
-                <p className="text-muted-foreground">
-                  Connect your wallet to redeem PUSD
-                </p>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+              View All
+            </Button>
+          </div>
+          <TransactionHistory walletAddress={walletAddress || undefined} />
+        </div>
       </div>
     </div>
   );

@@ -13,7 +13,6 @@ import Link from 'next/link';
 export default function StatsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isTestnet, setIsTestnet] = useState(false);
-  const [reserveStatus, setReserveStatus] = useState<ReserveStatus | null>(null);
   const [collateralBreakdown, setCollateralBreakdown] = useState<CollateralBreakdown | null>(null);
   const [stats, setStats] = useState({
     totalPiReserve: '0.0000000',
@@ -30,6 +29,8 @@ export default function StatsPage() {
     totalHolders: 0,
     piPrice: 0,
     isFullyBacked: false,
+    mintFeeRate: 0.003,
+    redeemFeeRate: 0.003,
   });
 
   useEffect(() => {
@@ -40,15 +41,17 @@ export default function StatsPage() {
       try {
         setIsLoading(true);
 
-        const statsResponse = await apiClient.getStatsLegacy();
+        const statsResponse = await apiClient.getStats();
+        let fetchedPiPrice = 0;
         if (statsResponse.success && statsResponse.data) {
           const d = statsResponse.data as {
             totalPiReserve?: string; totalUsdReserve?: string; totalPUSDSupply?: string;
             totalPUSDUsdValue?: string; backingRatio?: string; reserveSurplus?: string;
             totalFeesCollected?: string; totalVolume?: string;
             totalMints?: number; totalRedeems?: number; totalTransactions?: number; totalHolders?: number;
-            piPrice?: number; isFullyBacked?: boolean;
+            piPrice?: number; isFullyBacked?: boolean; mintFeeRate?: number; redeemFeeRate?: number;
           };
+          fetchedPiPrice = d.piPrice ?? 0;
           setStats({
             totalPiReserve: d.totalPiReserve || '0.0000000',
             totalUsdReserve: d.totalUsdReserve || '0.00',
@@ -64,6 +67,8 @@ export default function StatsPage() {
             totalHolders: d.totalHolders ?? 0,
             piPrice: d.piPrice ?? 0,
             isFullyBacked: d.isFullyBacked ?? false,
+            mintFeeRate: d.mintFeeRate ?? 0.003,
+            redeemFeeRate: d.redeemFeeRate ?? 0.003,
           });
         }
 
@@ -71,32 +76,21 @@ export default function StatsPage() {
           try {
             const reserveResponse = await apiClient.getReserveStatus();
             if (reserveResponse.success && reserveResponse.data) {
-              const status = reserveResponse.data as ReserveStatus;
-              setReserveStatus(status);
+              const status = reserveResponse.data as any; // Updated structure
               
-              if (status.reserve && status.pool && status.total) {
-                setCollateralBreakdown({
-                  reserve: {
-                    piAmount: status.reserve.piBalance || '0',
-                    usdTestAmount: status.reserve.usdTestBalance || '0',
-                    piValue: status.reserve.piValue || '0',
-                    usdTestValue: status.reserve.usdTestValue || '0',
-                  },
-                  pool: {
-                    piAmount: status.pool.piAmount || '0',
-                    usdTestAmount: status.pool.usdTestAmount || '0',
-                    piValue: status.pool.piValue || '0',
-                    usdTestValue: status.pool.usdTestValue || '0',
-                  },
-                  total: {
-                    piAmount: status.total.piAmount || '0',
-                    usdTestAmount: status.total.usdTestAmount || '0',
-                    totalValue: status.total.totalValue || '0',
-                    usdcRatio: status.total.usdcRatio || 0,
-                    piRatio: status.total.piRatio || 0,
-                  },
-                });
-              }
+              const totalUsd = status.totalUsdReserve || 0;
+              const piValue = (status.piReserve || 0) * fetchedPiPrice;
+              const cashUsd = status.cashUsdReserve || 0;
+              const tBillUsd = status.tBillUsdReserve || 0;
+              
+              setCollateralBreakdown({
+                totalUsdReserve: totalUsd,
+                piReserve: status.piReserve || 0,
+                cashUsdReserve: cashUsd,
+                tBillUsdReserve: tBillUsd,
+                piRatio: totalUsd > 0 ? (piValue / totalUsd) * 100 : 0,
+                usdRatio: totalUsd > 0 ? ((cashUsd + tBillUsd) / totalUsd) * 100 : 100
+              } as any);
             }
           } catch (error) {
             console.error('Failed to fetch reserve status:', error);
@@ -185,27 +179,27 @@ export default function StatsPage() {
                   <div className="flex justify-between text-sm mb-1.5">
                     <span className="text-muted-foreground">Pi</span>
                     <span className="tabular-nums font-medium">
-                      {collateralBreakdown?.total.piAmount || stats.totalPiReserve} Pi
+                      {((collateralBreakdown as any)?.piReserve || stats.totalPiReserve).toLocaleString()} Pi
                     </span>
                   </div>
                   <div className="h-2 rounded-full bg-secondary overflow-hidden">
                     <div 
                       className="h-full rounded-full bg-accent transition-all duration-500" 
-                      style={{ width: `${collateralBreakdown?.total.piRatio || 60}%` }}
+                      style={{ width: `${(collateralBreakdown as any)?.piRatio || 0}%` }}
                     />
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-muted-foreground">{isTestnet ? 'USD-TEST' : 'USDC'}</span>
+                    <span className="text-muted-foreground">{isTestnet ? 'USD-TEST / Cash' : 'USDC / Cash'}</span>
                     <span className="tabular-nums font-medium">
-                      {collateralBreakdown?.total.usdTestAmount || stats.totalUsdReserve}
+                      ${Number((collateralBreakdown as any)?.cashUsdReserve || stats.totalUsdReserve).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="h-2 rounded-full bg-secondary overflow-hidden">
                     <div 
                       className="h-full rounded-full bg-foreground/30 transition-all duration-500" 
-                      style={{ width: `${collateralBreakdown?.total.usdcRatio || 40}%` }}
+                      style={{ width: `${(collateralBreakdown as any)?.usdRatio || 100}%` }}
                     />
                   </div>
                 </div>
@@ -243,7 +237,7 @@ export default function StatsPage() {
                 <span className="text-sm text-muted-foreground">PUSD</span>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                0.3% on every mint and redeem
+                {stats.mintFeeRate !== undefined ? `${(stats.mintFeeRate * 100).toFixed(1)}% on mint / ${(stats.redeemFeeRate * 100).toFixed(1)}% on redeem` : 'Dynamic fees'}
               </p>
             </Card>
 

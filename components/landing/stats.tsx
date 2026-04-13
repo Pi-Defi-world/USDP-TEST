@@ -4,17 +4,53 @@ import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { AnimatedCounter } from '@/components/ui/animated-counter';
 import { cn } from '@/lib/utils';
-
-const stats = [
-  { label: 'PUSD Value', value: 1, prefix: '$', decimals: 2, subtext: 'Always' },
-  { label: 'In circulation', value: 0, suffix: '', decimals: 0, subtext: 'PUSD' },
-  { label: 'Backed', value: 100, suffix: '%', decimals: 0, subtext: 'Reserve ratio' },
-  { label: 'Fee', value: 0.3, suffix: '%', decimals: 1, subtext: 'Per transaction' },
-];
+import { useStatsStore } from '@/lib/store/priceStore';
+import { apiClient } from '@/lib/api/client';
 
 export function LandingStats() {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
+  
+  const { stats, fetchStats } = useStatsStore();
+  const [collateral, setCollateral] = useState({ piRatio: 60, usdRatio: 40 });
+
+  useEffect(() => {
+    if (!stats) fetchStats();
+
+    const loadReserve = async () => {
+      try {
+        const res = await apiClient.getReserveStatus();
+        if (res.success && res.data) {
+          const status = res.data as any;
+          const totalUsd = status.totalUsdReserve || 0;
+          const cashUsd = status.cashUsdReserve || 0;
+          const tBillUsd = status.tBillUsdReserve || 0;
+          const usdSum = cashUsd + tBillUsd;
+          
+          if (totalUsd > 0) {
+            const usdRatio = (usdSum / totalUsd) * 100;
+            const piRatio = 100 - usdRatio;
+            setCollateral({ piRatio, usdRatio });
+          }
+        }
+      } catch (e) {
+        // Fallback to defaults
+      }
+    };
+    
+    loadReserve();
+  }, [stats, fetchStats]);
+
+  const circulation = stats ? parseFloat(stats.totalPUSDSupply) : 0;
+  const backingRatio = stats ? parseFloat(stats.backingRatio) : 100;
+  const feeRate = stats?.mintFeeRate !== undefined ? stats.mintFeeRate * 100 : 0.3;
+
+  const statsList = [
+    { label: 'PUSD Value', value: 1, prefix: '$', decimals: 2, subtext: 'Always' },
+    { label: 'In circulation', value: circulation, suffix: '', decimals: 0, subtext: 'PUSD' },
+    { label: 'Backed', value: backingRatio, suffix: '%', decimals: 0, subtext: 'Reserve ratio' },
+    { label: 'Fee', value: feeRate, suffix: '%', decimals: 1, subtext: 'Per transaction' },
+  ];
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -44,7 +80,7 @@ export function LandingStats() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 max-w-4xl mx-auto">
-          {stats.map((stat, index) => (
+          {statsList.map((stat, index) => (
             <div 
               key={stat.label}
               className={cn(
@@ -115,30 +151,24 @@ export function LandingStats() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Pi</span>
-                  <span className="font-mono font-medium">60%</span>
+                  <span className="font-mono font-medium">{collateral.piRatio.toFixed(1)}%</span>
                 </div>
                 <div className="h-2.5 rounded-full bg-secondary overflow-hidden">
                   <div 
-                    className={cn(
-                      "h-full rounded-full bg-accent transition-all duration-1000 ease-out",
-                      isVisible ? "w-[60%]" : "w-0"
-                    )}
-                    style={{ transitionDelay: '600ms' }}
+                    className="h-full rounded-full bg-accent transition-all duration-1000 ease-out"
+                    style={{ width: isVisible ? `${collateral.piRatio}%` : '0%', transitionDelay: '600ms' }}
                   />
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">USD</span>
-                  <span className="font-mono font-medium">40%</span>
+                  <span className="text-muted-foreground">USD Cash / T-Bills</span>
+                  <span className="font-mono font-medium">{collateral.usdRatio.toFixed(1)}%</span>
                 </div>
                 <div className="h-2.5 rounded-full bg-secondary overflow-hidden">
                   <div 
-                    className={cn(
-                      "h-full rounded-full bg-foreground/20 transition-all duration-1000 ease-out",
-                      isVisible ? "w-[40%]" : "w-0"
-                    )}
-                    style={{ transitionDelay: '800ms' }}
+                    className="h-full rounded-full bg-foreground/20 transition-all duration-1000 ease-out"
+                    style={{ width: isVisible ? `${collateral.usdRatio}%` : '0%', transitionDelay: '800ms' }}
                   />
                 </div>
               </div>

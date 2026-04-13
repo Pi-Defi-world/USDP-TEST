@@ -5,14 +5,19 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useStatsStore } from '@/lib/store/priceStore';
 import { cn } from '@/lib/utils';
 
 export function LandingHero() {
   const [mounted, setMounted] = useState(false);
+  const { stats, fetchStats } = useStatsStore();
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (!stats) {
+      fetchStats();
+    }
+  }, [stats, fetchStats]);
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -42,7 +47,7 @@ export function LandingHero() {
               {/* Headline */}
               <h1
                 className={cn(
-                  "text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.08] mb-6 transition-all duration-700 delay-100",
+                  "text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08] mb-6 transition-all duration-700 delay-100",
                   mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                 )}
               >
@@ -69,13 +74,13 @@ export function LandingHero() {
                   mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                 )}
               >
-                <Button size="lg" asChild className="w-full sm:w-auto text-base px-8 h-12 rounded-xl">
+                <Button size="lg" asChild className="w-full sm:w-auto text-base px-8 h-11 rounded-lg">
                   <Link href="/dashboard">
                     Launch App
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" asChild className="w-full sm:w-auto text-base px-8 h-12 rounded-xl">
+                <Button size="lg" variant="outline" asChild className="w-full sm:w-auto text-base px-8 h-11 rounded-lg">
                   <Link href="/stats">
                     See How It Works
                   </Link>
@@ -95,12 +100,16 @@ export function LandingHero() {
                 </div>
                 <div className="w-px h-8 bg-border" />
                 <div className="flex flex-col items-center gap-1">
-                  <span className="font-mono text-xl font-semibold text-foreground">100%</span>
+                  <span className="font-mono text-xl font-semibold text-foreground">
+                    {stats?.backingRatio || '100%'}
+                  </span>
                   <span className="text-muted-foreground text-xs">Backed</span>
                 </div>
                 <div className="w-px h-8 bg-border" />
                 <div className="flex flex-col items-center gap-1">
-                  <span className="font-mono text-xl font-semibold text-foreground">0.3%</span>
+                  <span className="font-mono text-xl font-semibold text-foreground">
+                    {stats?.mintFeeRate !== undefined ? `${(stats.mintFeeRate * 100).toFixed(1)}%` : '0.3%'}
+                  </span>
                   <span className="text-muted-foreground text-xs">Flat fee</span>
                 </div>
               </div>
@@ -135,7 +144,7 @@ export function LandingHero() {
                 <div className="absolute -top-4 -right-4 bg-card border border-border rounded-2xl px-4 py-3 shadow-xl">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                    <p className="text-xs font-medium text-accent">100% Backed</p>
+                    <p className="text-xs font-medium text-accent">{stats?.backingRatio || '100%'} Backed</p>
                   </div>
                 </div>
               </div>

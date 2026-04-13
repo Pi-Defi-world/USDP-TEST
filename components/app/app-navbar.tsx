@@ -99,8 +99,8 @@ function getPageTitle(pathname: string | null): string {
   
   const routes: Record<string, string> = {
     '/dashboard': 'Dashboard',
-    '/dashboard/profile': 'Profile',
-    '/dashboard/save': 'Earn',
+    '/dashboard/mint': 'Mint & Burn',
+    '/dashboard/earn': 'Earn',
     '/dashboard/reserve': 'Reserves',
     '/settings': 'Settings',
     '/stats': 'Protocol Stats',

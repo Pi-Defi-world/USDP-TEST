@@ -2,31 +2,19 @@
 
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { Home, BarChart3, Settings, Wallet } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Home, BarChart3, Settings, Wallet, PlusCircle } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 const navItems = [
   { href: '/dashboard', icon: Home, label: 'Home' },
-  { href: '/dashboard/save', icon: Wallet, label: 'Earn' },
+  { href: '/dashboard/mint', icon: PlusCircle, label: 'Mint' },
+  { href: '/dashboard/earn', icon: Wallet, label: 'Earn' },
   { href: '/stats', icon: BarChart3, label: 'Stats' },
   { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export function BottomNav() {
-  const [pathname, setPathname] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handleLocationChange = () => {
-      setPathname(window.location.pathname);
-    };
-
-    handleLocationChange();
-    window.addEventListener('popstate', handleLocationChange);
-
-    return () => {
-      window.removeEventListener('popstate', handleLocationChange);
-    };
-  }, []);
+  const pathname = usePathname();
 
   return (
     <div className="bottom-nav lg:hidden">

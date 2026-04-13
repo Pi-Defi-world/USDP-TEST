@@ -75,18 +75,29 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
+      
+      let data: any = null;
+      // Some endpoints might not return JSON, or might be empty
+      const text = await response.text();
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          console.warn(`Failed to parse JSON response from ${endpoint}`, e);
+          data = { error: text };
+        }
+      }
 
       if (!response.ok) {
         // For 404 errors, include the status code in the error message for easier detection
-        const errorMessage = data.error || `HTTP ${response.status}`;
+        const errorMessage = data?.error || `HTTP ${response.status} ${response.statusText}`;
         const error = new Error(errorMessage) as Error & { status?: number };
         // Add status code to error for easier checking
         error.status = response.status;
         throw error;
       }
 
-      return data;
+      return data || { success: true };
     } catch (error) {
       // Only log non-404 errors to avoid cluttering console
       const errorWithStatus = error as Error & { status?: number };
@@ -134,39 +145,11 @@ class ApiClient {
     });
   }
 
-  // Wallet Import
-  async importWallet(userId: string, mnemonic: string) {
-    return this.request('/auth/import-wallet', {
-      method: 'POST',
-      body: JSON.stringify({ userId, mnemonic }),
-    });
-  }
-
-  // Encrypted Secret Management
-  async storeSecret(data: {
-    userId: string;
-    publicKey: string;
-    encryptedSecret: string;
-    iv: string;
-    salt: string;
-  }) {
-    return this.request('/auth/store-secret', {
+  // Account Management
+  async importAccount(data: { mnemonic?: string; secret?: string }) {
+    return this.request('/account/import', {
       method: 'POST',
       body: JSON.stringify(data),
-    });
-  }
-
-  async getSecret(userId: string, publicKey: string) {
-    return this.request('/auth/get-secret', {
-      method: 'POST',
-      body: JSON.stringify({ userId, publicKey }),
-    });
-  }
-
-  async removeSecret(userId: string, publicKey: string) {
-    return this.request('/auth/remove-secret', {
-      method: 'DELETE',
-      body: JSON.stringify({ userId, publicKey }),
     });
   }
 
@@ -235,10 +218,6 @@ class ApiClient {
       process.env.NEXT_PUBLIC_NETWORK === 'testnet' ||
       window.location.hostname.includes('testnet')
     );
-  }
-
-  async getStatsLegacy(type: 'dynamic' | 'fixed' = 'dynamic') {
-    return this.request(`/stablecoin/stats?type=${type}`);
   }
 
   async mint(data: {
@@ -360,6 +339,24 @@ class ApiClient {
   async getSavingsHistory(limit?: number) {
     const params = limit ? `?limit=${limit}` : '';
     return this.request(`/savings/history${params}`);
+  }
+
+  // Lending & Borrowing
+  async getLendingPosition(address: string) {
+    return this.request(`/lending/position/${address}`);
+  }
+
+  async submitLendingRequest(data: {
+    from: string;
+    spender?: string;
+    to?: string;
+    requests: Array<{ request_type: number; address: string; amount: string | number }>;
+    secretSeed: string;
+  }) {
+    return this.request('/lending/submit', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 }
 

@@ -5,6 +5,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL ;
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const authHeader = request.headers.get('Authorization');
     const originHeader = request.headers.get('origin');
     const refererHeader = request.headers.get('referer');
     const origin = originHeader ||
@@ -14,12 +15,9 @@ export async function POST(request: NextRequest) {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      ...(authHeader ? { 'Authorization': authHeader } : {}),
+      'x-session-id': request.headers.get('x-session-id') || '',
     };
-
-    if (origin) {
-      headers['origin'] = origin;
-      headers['referer'] = refererHeader || origin;
-    }
     
     const response = await fetch(`${BACKEND_URL}/api/auth/find-user-by-wallet`, {
       method: 'POST',

@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
     // Forward origin and referer headers for proper WebAuthn RP ID detection
     const originHeader = request.headers.get('origin');
     const refererHeader = request.headers.get('referer');
+    const authHeader = request.headers.get('Authorization');
     const origin = originHeader ||
                    (refererHeader ? new URL(refererHeader).origin : '') ||
                    (request.url ? new URL(request.url).origin : '') ||
@@ -28,6 +29,8 @@ export async function POST(request: NextRequest) {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      ...(authHeader ? { 'Authorization': authHeader } : {}),
+      'x-session-id': request.headers.get('x-session-id') || '',
     };
 
     if (origin) {

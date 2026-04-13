@@ -2,13 +2,19 @@
 
 import { Button } from '@/components/ui/button';
 import { usePi } from '@/components/providers/pi-provider';
+import { useStatsStore } from '@/lib/store/priceStore';
 import { ArrowRight, Shield, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 export function ConnectWalletCard() {
   const { authenticate } = usePi();
+  const { stats, fetchStats } = useStatsStore();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!stats) fetchStats();
+  }, [stats, fetchStats]);
 
   const handleConnect = async () => {
     if (typeof window === 'undefined' || !window.Pi) {
@@ -42,7 +48,7 @@ export function ConnectWalletCard() {
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/80" />
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-card/90 backdrop-blur-sm border border-border rounded-full px-4 py-1.5">
             <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-            <span className="text-xs font-medium">100% Backed</span>
+            <span className="text-xs font-medium">{stats?.backingRatio || '100%'} Backed</span>
           </div>
         </div>
         
@@ -78,7 +84,7 @@ export function ConnectWalletCard() {
           <div className="p-4 rounded-2xl bg-muted/50">
             <Shield className="w-5 h-5 text-accent mb-2" />
             <p className="text-sm font-medium mb-0.5">Secure</p>
-            <p className="text-xs text-muted-foreground">100% reserve backing</p>
+            <p className="text-xs text-muted-foreground">{stats?.backingRatio || '100%'} reserve backing</p>
           </div>
           <div className="p-4 rounded-2xl bg-muted/50">
             <Zap className="w-5 h-5 text-accent mb-2" />

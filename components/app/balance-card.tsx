@@ -44,7 +44,7 @@ export function BalanceCard({
   const totalUsdValue = (parseFloat(pusdValue) || 0) + (parseFloat(piValue) || 0);
 
   return (
-    <div className="rounded-3xl bg-foreground text-background p-6 overflow-hidden relative">
+    <div className="rounded-xl sm:rounded-2xl bg-foreground text-background p-5 sm:p-6 overflow-hidden relative">
       {/* Subtle gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-accent/10 pointer-events-none" />
       
@@ -76,7 +76,7 @@ export function BalanceCard({
 
         {/* Total Value */}
         <div className="mb-8">
-          <p className="text-4xl md:text-5xl font-semibold tracking-tight font-mono tabular-nums">
+          <p className="text-2xl md:text-3xl font-semibold tracking-tight font-mono tabular-nums">
             {showBalance ? `$${formatNumber(totalUsdValue.toString())}` : '••••••'}
           </p>
         </div>

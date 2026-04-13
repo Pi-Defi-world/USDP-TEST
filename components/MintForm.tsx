@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/bottom-sheet';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/lib/store/authStore';
-import { usePriceStore } from '@/lib/store/priceStore';
+import { usePriceStore, useStatsStore } from '@/lib/store/priceStore';
 import { useWalletStore } from '@/lib/store/walletStore';
 import { apiClient } from '@/lib/api/client';
 import { Loader2, AlertCircle, Info } from 'lucide-react';
@@ -37,13 +37,16 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
   const { toast } = useToast();
   const { retrieveKeypairForTransaction, setError: clearAuthError } = useAuthStore();
   const { piPrice } = usePriceStore();
+  const { stats } = useStatsStore();
   const { balance } = useWalletStore();
 
   // Calculations
-  const OVERCOLLATERALIZATION_RATIO = 1.15;
+  const OVERCOLLATERALIZATION_RATIO = stats?.overcollateralization || 1.15;
+  const mintFeeRate = stats?.mintFeeRate || 0.003;
+  
   const piAmount = parseFloat(amount) || 0;
   const usdValue = piAmount * (piPrice || 0);
-  const mintFee = usdValue * 0.003;
+  const mintFee = usdValue * mintFeeRate;
   const pusdOutput = usdValue - mintFee;
   const piRequired = piAmount * OVERCOLLATERALIZATION_RATIO;
   const piBalance = parseFloat(balance?.pi?.amount || '0');
@@ -160,7 +163,7 @@ export function MintForm({ walletAddress, onTransactionComplete }: MintFormProps
           <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-muted/50 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Info className="h-4 w-4" />
-              <span>Fee (0.3%)</span>
+              <span>Fee ({(mintFeeRate * 100).toFixed(1)}%)</span>
             </div>
             <span className="font-mono text-foreground">${mintFee.toFixed(4)}</span>
           </div>

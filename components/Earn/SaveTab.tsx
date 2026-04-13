@@ -1,15 +1,13 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, PiggyBank, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
+import { Loader2, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 
-export default function SavePage() {
+export function SaveTab() {
   const [balance, setBalance] = useState<string>('0');
   const [accruedInterest, setAccruedInterest] = useState<string>('0');
   const [apy, setApy] = useState<number>(0);
@@ -127,16 +125,6 @@ export default function SavePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
-          <PiggyBank className="h-6 w-6" />
-          Save
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Earn yield on your PUSD. Deposit to start saving; withdraw anytime.
-        </p>
-      </div>
-
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>

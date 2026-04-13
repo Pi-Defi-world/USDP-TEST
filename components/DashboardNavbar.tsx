@@ -35,9 +35,9 @@ export function DashboardNavbar() {
   };
 
   const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: Home },
-    { href: '/dashboard/save', label: 'Save', icon: PiggyBank },
-    { href: '/dashboard/reserve', label: 'Reserves & Health', icon: Shield },
+    { href: '/dashboard', label: 'Home', icon: Home },
+    { href: '/dashboard/earn', label: 'Earn', icon: PiggyBank },
+    { href: '/dashboard/reserve', label: 'Reserves', icon: Shield },
     { href: '/stats', label: 'Stats', icon: TrendingUp },
     { href: '/developers', label: 'Developers', icon: Code },
     { href: '/settings', label: 'Settings', icon: Settings },

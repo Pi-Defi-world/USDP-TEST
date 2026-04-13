@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/bottom-sheet';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/lib/store/authStore';
-import { usePriceStore } from '@/lib/store/priceStore';
+import { usePriceStore, useStatsStore } from '@/lib/store/priceStore';
 import { useWalletStore } from '@/lib/store/walletStore';
 import { apiClient } from '@/lib/api/client';
 import { Loader2, AlertCircle, Info } from 'lucide-react';
@@ -36,12 +36,14 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
   const { toast } = useToast();
   const { retrieveKeypairForTransaction, setError: clearAuthError } = useAuthStore();
   const { piPrice } = usePriceStore();
+  const { stats } = useStatsStore();
   const { balance } = useWalletStore();
 
   // Calculations
+  const redeemFeeRate = stats?.redeemFeeRate || 0.003;
   const pusdAmount = parseFloat(amount) || 0;
   const usdValue = pusdAmount; // 1 PUSD = 1 USD
-  const redeemFee = usdValue * 0.003;
+  const redeemFee = usdValue * redeemFeeRate;
   const netUsdValue = usdValue - redeemFee;
   const currentPiPrice = piPrice || 0;
   const piOutput = currentPiPrice > 0 ? netUsdValue / currentPiPrice : 0;
@@ -158,7 +160,7 @@ export function RedeemForm({ walletAddress, onTransactionComplete }: RedeemFormP
           <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-muted/50 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Info className="h-4 w-4" />
-              <span>Fee (0.3%)</span>
+              <span>Fee ({(redeemFeeRate * 100).toFixed(1)}%)</span>
             </div>
             <span className="font-mono text-foreground">{redeemFee.toFixed(4)} PUSD</span>
           </div>

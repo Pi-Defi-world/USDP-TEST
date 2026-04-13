@@ -60,7 +60,7 @@ export function NumericInput({
         <span
           className={cn(
             'font-mono font-semibold tracking-tight transition-all duration-200',
-            size === 'lg' ? 'text-5xl md:text-6xl' : 'text-3xl md:text-4xl',
+            size === 'lg' ? 'text-4xl md:text-5xl' : 'text-3xl md:text-4xl',
             isPlaceholder ? 'text-muted-foreground/40' : 'text-foreground'
           )}
         >

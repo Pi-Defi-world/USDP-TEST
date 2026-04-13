@@ -26,10 +26,14 @@ export async function POST(request: NextRequest) {
       normalizedBody.secret = secret.trim();
     }
 
+    const authHeader = request.headers.get('Authorization');
+
     const response = await fetch(`${SERVER_API_URL}/api/account/import`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(authHeader ? { 'Authorization': authHeader } : {}),
+        'x-session-id': request.headers.get('x-session-id') || '',
       },
       body: JSON.stringify(normalizedBody),
     });

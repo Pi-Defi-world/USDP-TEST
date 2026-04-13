@@ -23,6 +23,25 @@ interface WalletState {
   fetchReserveStatus: () => Promise<void>;
 }
 
+// Function to get persisted wallet address from local storage
+const getPersistedWalletAddress = (): string | null => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('persisted_wallet_address');
+  }
+  return null;
+};
+
+// Function to set persisted wallet address in local storage
+const setPersistedWalletAddress = (address: string | null) => {
+  if (typeof window !== 'undefined') {
+    if (address) {
+      localStorage.setItem('persisted_wallet_address', address);
+    } else {
+      localStorage.removeItem('persisted_wallet_address');
+    }
+  }
+};
+
 export const useWalletStore = create<WalletState>((set, get) => {
   // Initialize testnet mode check
   const checkTestnetMode = () => {
@@ -31,13 +50,14 @@ export const useWalletStore = create<WalletState>((set, get) => {
     return testnetMode;
   };
 
-  // Initial check
+  // Initial check and load persisted wallet address
+  const initialWalletAddress = getPersistedWalletAddress();
   if (typeof window !== 'undefined') {
     checkTestnetMode();
   }
 
   return {
-    walletAddress: null,
+    walletAddress: initialWalletAddress,
     balance: null,
     isLoading: false,
     error: null,
@@ -45,18 +65,24 @@ export const useWalletStore = create<WalletState>((set, get) => {
     isTestnet: false,
     reserveStatus: null,
   
-    setWalletAddress: (address) => set({ walletAddress: address }),
+    setWalletAddress: (address) => {
+      set({ walletAddress: address });
+      setPersistedWalletAddress(address);
+    },
     setBalance: (balance) => set({ balance, lastUpdate: new Date() }),
     setLoading: (loading) => set({ isLoading: loading }),
     setError: (error) => set({ error }),
     updateBalance: (balance) => set({ balance, lastUpdate: new Date(), error: null }),
-    clearWallet: () => set({ 
-      walletAddress: null, 
-      balance: null, 
-      error: null, 
-      lastUpdate: null,
-      reserveStatus: null,
-    }),
+    clearWallet: () => {
+      set({
+        walletAddress: null,
+        balance: null,
+        error: null,
+        lastUpdate: null,
+        reserveStatus: null,
+      });
+      setPersistedWalletAddress(null);
+    },
   
   fetchBalance: async (address: string) => {
     set({ isLoading: true, error: null });

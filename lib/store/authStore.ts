@@ -3,7 +3,6 @@ import { User, AuthResponseData } from '@/types';
 import { apiClient } from '@/lib/api/client';
 import { idbGet, idbSet, idbHas, STORES } from '@/lib/storage/idb';
 import { generateAesKey, aesEncrypt, aesDecrypt, exportCryptoKey, importRawAesKey } from '@/lib/crypto/client-crypto';
-import { encryptWithPassword, decryptWithPassword } from '@/lib/crypto/password-crypto';
 
 interface AuthState {
   user: User | null;
@@ -24,14 +23,10 @@ interface AuthState {
   // Wallet Import
   importWallet: (userId: string, mnemonic: string) => Promise<{ success: boolean; data?: { publicKey: string; secret: string }; error?: string }>;
   
-  // Encrypted Secret Management (Server-side)
-  storeEncryptedSecret: (userId: string, publicKey: string, mnemonic: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  getEncryptedSecret: (userId: string, publicKey: string, password: string) => Promise<{ success: boolean; data?: { mnemonic: string }; error?: string }>;
-  removeEncryptedSecret: (userId: string, publicKey: string) => Promise<{ success: boolean; error?: string }>;
-  
   // Wallet Operations
   retrieveKeypairForTransaction: (walletAddress: string) => Promise<{ walletAddress: string; secretSeed: string }>;
   hasWalletInIndexedDB: (walletAddress: string) => Promise<boolean>;
+  saveWalletLocally: (walletAddress: string, secretSeed: string) => Promise<{ success: boolean; error?: string }>;
   reImportWallet: (walletAddress: string, passphrase: string) => Promise<{ success: boolean; error?: string }>;
   verifyPassphrase: (username: string, passphrase: string) => Promise<{ success: boolean; data?: { walletAddress: string }; error?: string }>;
 }
@@ -85,114 +80,25 @@ export const useAuthStore = create<AuthState>((set) => {
       }
     },
   
-    // Wallet Import
-    importWallet: async (userId, mnemonic) => {
-      set({ isLoading: true, error: null });
-      try {
-        const response = await apiClient.importWallet(userId, mnemonic);
-        set({ isLoading: false });
-        return {
-          success: response.success,
-          data: response.data as { publicKey: string; secret: string } | undefined,
-          error: (response as { error?: string }).error,
-        };
-      } catch (error) {
-        set({ 
-          error: error instanceof Error ? error.message : 'Wallet import failed', 
-          isLoading: false 
-        });
-        throw error;
-      }
-    },
-  
-    // Encrypted Secret Management (Server-side)
-    storeEncryptedSecret: async (userId, publicKey, mnemonic, password) => {
-      set({ isLoading: true, error: null });
-      try {
-        // Encrypt mnemonic with password on client-side
-        const { encryptedSecret, iv, salt } = await encryptWithPassword(mnemonic, password);
-        
-        // Store encrypted secret on server
-        const response = await apiClient.storeSecret({
-          userId,
-          publicKey,
-          encryptedSecret,
-          iv,
-          salt,
-        });
-        
-        set({ isLoading: false });
-        return {
-          success: response.success,
-          error: (response as { error?: string }).error,
-        };
-      } catch (error) {
-        set({ 
-          error: error instanceof Error ? error.message : 'Failed to store encrypted secret', 
-          isLoading: false 
-        });
-        return { success: false, error: error instanceof Error ? error.message : 'Failed to store encrypted secret' };
-      }
-    },
-  
-    getEncryptedSecret: async (userId, publicKey, password) => {
-      set({ isLoading: true, error: null });
-      try {
-        // Get encrypted secret from server
-        const response = await apiClient.getSecret(userId, publicKey);
-        
-        if (!response.success || !response.data) {
-          set({ isLoading: false });
-          return {
-            success: false,
-            error: (response as { error?: string }).error || 'Secret not found',
-          };
-        }
-        
-        const secretData = response.data as { encryptedSecret: string; iv: string; salt: string };
-        
-        // Decrypt mnemonic with password on client-side
-        const mnemonic = await decryptWithPassword(
-          secretData.encryptedSecret,
-          password,
-          secretData.salt,
-          secretData.iv
-        );
-        
-        set({ isLoading: false });
-        return {
-          success: true,
-          data: { mnemonic },
-        };
-      } catch (error) {
-        set({ 
-          error: error instanceof Error ? error.message : 'Failed to retrieve encrypted secret', 
-          isLoading: false 
-        });
-        return { 
-          success: false, 
-          error: error instanceof Error ? error.message : 'Failed to retrieve encrypted secret' 
-        };
-      }
-    },
-  
-    removeEncryptedSecret: async (userId, publicKey) => {
-      set({ isLoading: true, error: null });
-      try {
-        const response = await apiClient.removeSecret(userId, publicKey);
-        set({ isLoading: false });
-        return {
-          success: response.success,
-          error: (response as { error?: string }).error,
-        };
-      } catch (error) {
-        set({ 
-          error: error instanceof Error ? error.message : 'Failed to remove encrypted secret', 
-          isLoading: false 
-        });
-        return { success: false, error: error instanceof Error ? error.message : 'Failed to remove encrypted secret' };
-      }
-    },
+  // Wallet Import
+  importWallet: async (userId, mnemonic) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await apiClient.importAccount({ mnemonic });
+      set({ isLoading: false });
+      return {
+        success: response.success,
+        data: response.data as { publicKey: string; secret: string } | undefined,
+        error: (response as { error?: string }).error,
+      };
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Wallet import failed', 
+        isLoading: false 
+      });
+      throw error;
+    }
+  },
   
     // Wallet Operations
     hasWalletInIndexedDB: async (walletAddress: string): Promise<boolean> => {
@@ -205,27 +111,9 @@ export const useAuthStore = create<AuthState>((set) => {
       }
     },
 
-    reImportWallet: async (walletAddress: string, passphrase: string): Promise<{ success: boolean; error?: string }> => {
+    saveWalletLocally: async (walletAddress: string, secretSeed: string): Promise<{ success: boolean; error?: string }> => {
       set({ isLoading: true, error: null });
       try {
-        // Derive seed from passphrase
-        const response = await fetch('/api/passphrase/derive-wallet', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ passphrase }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to derive wallet from passphrase');
-        }
-
-        const { walletAddress: derivedWalletAddress, secretSeed } = await response.json();
-
-        // Verify wallet address matches
-        if (derivedWalletAddress !== walletAddress) {
-          throw new Error('Passphrase does not match this wallet address');
-        }
-
         // Generate new AES key and encrypt seed
         const aesKey = await generateAesKey();
         const { ciphertext, iv } = await aesEncrypt(aesKey, secretSeed);
@@ -240,6 +128,37 @@ export const useAuthStore = create<AuthState>((set) => {
 
         set({ isLoading: false });
         return { success: true };
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to save wallet locally';
+        set({ error: errorMessage, isLoading: false });
+        return { success: false, error: errorMessage };
+      }
+    },
+
+    reImportWallet: async (walletAddress: string, passphrase: string): Promise<{ success: boolean; error?: string }> => {
+      set({ isLoading: true, error: null });
+      try {
+        // Derive seed from passphrase
+        const response = await fetch('/api/passphrase/derive-wallet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ passphrase }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to derive wallet from passphrase');
+        }
+
+        const { walletAddress: derivedWalletAddress, secretSeed } = await response.json();
+
+        // Verify wallet address matches
+        if (derivedWalletAddress !== walletAddress) {
+          throw new Error('Passphrase does not match this wallet address');
+        }
+
+        const result = await useAuthStore.getState().saveWalletLocally(walletAddress, secretSeed);
+        return result;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to re-import wallet';
         set({ 
@@ -274,32 +193,7 @@ export const useAuthStore = create<AuthState>((set) => {
           set({ isLoading: false });
           return { walletAddress, secretSeed };
         } else {
-          // Check if user has server-side encrypted secret
-          const userResponse = await apiClient.findUserByWallet(walletAddress);
-          if (!userResponse.success) {
-            throw new Error(userResponse.error || 'User not found');
-          }
-
-          interface UserResponseData {
-            user?: {
-              id: string;
-              piUsername: string;
-              walletAddress: string;
-              createdAt: string;
-            };
-          }
-          
-          const responseData = userResponse.data as UserResponseData | undefined;
-          const directUser = (userResponse as { user?: UserResponseData['user'] }).user;
-          const userData = responseData?.user || directUser;
-          
-          if (!userData || !userData.id) {
-            throw new Error('User not found or missing user ID');
-          }
-          
-          // User needs to provide password to decrypt server-side secret
-          // This should be handled by the UI prompting for password
-          throw new Error('WALLET_NOT_FOUND_LOCAL: Wallet not found in this device. Please provide your PIN/password to decrypt your server-side wallet, or re-import with your 24-word passphrase.');
+          throw new Error('WALLET_NOT_FOUND_LOCAL: Wallet not found in this device. Please re-import with your 24-word passphrase.');
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to retrieve keypair';
